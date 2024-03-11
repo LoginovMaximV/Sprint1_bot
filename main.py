@@ -1,5 +1,6 @@
-#Удачи
-import asyncio, os
+
+import asyncio
+import os
 import logging
 import sys
 
