@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, ForeignKey, Column, String, BigInteger, Integer
+from sqlalchemy import create_engine, ForeignKey, Column, String, BigInteger, Integer, text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship, backref
 
 Base = declarative_base()
 
@@ -9,9 +9,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column("id", Integer, primary_key=True)
-    name = Column("ФИО", String)
-    number = Column("Номер телефона", BigInteger)
-    status = Column("Статус", String)
+    name = Column("name", String)
+    number = Column("phone_number", BigInteger)
+    status = Column("status", String)
 
     def __init__(self, id, name, number, status):
         self.id = id
@@ -23,7 +23,10 @@ class User(Base):
         return f"({self.id}, {self.name}, {self.number}, {self.status})"
 
 
-engin = create_engine("postgresql://postgres:938271@localhost/postgres", echo=True)
+engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
+
+connections = engin.connect()
+
 Base.metadata.create_all(bind=engin)
 
 Session = sessionmaker(bind=engin)
@@ -44,20 +47,22 @@ session.add(p4)
 session.add(p5)
 session.add(p6)
 session.add(p7)
+session.expire_on_commit = False
 session.commit()
+connections.close()
 
 class Application(Base):
     __tablename__ = "applications"
 
-    id = Column("id заявки", Integer, primary_key=True)
-    app = Column("Заявка", String)
-    status = Column("Статус заявки", String)
+    id = Column("application_id", Integer, primary_key=True)
+    app = Column("application", String)
+    status = Column("status_application", String)
 
     users_id = Column(Integer, ForeignKey('users.id'))
 
-    chief = Column("Ответственны за исполнение", String)
-    start = Column("Начало исполнения", String)
-    stop = Column("Конец исполнения", String)
+    chief = Column("responsible_execution", String)
+    start = Column("start_execution", String)
+    stop = Column("end_execution", String)
 
     def __init__(self, id, app, status, users_id, chief, start, stop):
         self.id = id
@@ -72,7 +77,10 @@ class Application(Base):
         return f"({self.id}, {self.app}, {self.status}, {self.users_id}, {self.chief}, {self.start}, {self.stop}"
 
 
-engins = create_engine("postgresql://postgres:938271@localhost/postgres", echo=True)
+engins = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
+
+connections = engins.connect()
+
 Base.metadata.create_all(bind=engins)
 
 Session = sessionmaker(bind=engins)
@@ -91,3 +99,4 @@ session.add(a3)
 session.add(a4)
 session.add(a5)
 session.commit()
+connections.close()
