@@ -47,6 +47,7 @@ session.add(p4)
 session.add(p5)
 session.add(p6)
 session.add(p7)
+session.expire_on_commit = False
 session.commit()
 connections.close()
 
