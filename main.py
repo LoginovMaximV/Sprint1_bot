@@ -3,6 +3,7 @@ import asyncio
 import os
 import logging
 import sys
+import db_01
 
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.enums import ParseMode
@@ -26,12 +27,13 @@ async def command_start_handler(message: Message) -> None:
 async def get_contact(message: types.Message):
     contact = message.contact
     global user_contact
-    user_contact = str(contact.phone_number)
-    if contact.phone_number == admin_phone_number:
+    user_contact = str(contact.phone_number)[1:]
+    if db_01.user_exist(user_contact):
         await message.answer("Добро пожаловать!", reply_markup=kb.function_keyboard())
         user_contact = str(contact.phone_number)
     else:
-        await message.answer("Данного номера нет в базе сотрудников.")
+        await message.answer(f"Данного номера нет в базе сотрудников.")
+
 @dp.message(F.text == 'Подать заявку')
 async def new_report(message: types.Message):
     if user_contact == admin_phone_number:
