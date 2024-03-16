@@ -6,7 +6,7 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "userss"
 
     id = Column("id", Integer, primary_key=True)
     name = Column("name", String)
@@ -32,13 +32,13 @@ Base.metadata.create_all(bind=engin)
 Session = sessionmaker(bind=engin)
 session = Session()
 
-p1 = User(1, "Пименова Татьяна", 89512640239, '1')
-p2 = User(2, "Логинов Максим", 89612594865, '1')
-p3 = User(3, "Варова Ангелина", 89523641213, '1')
-p4 = User(4, "Шпилевая Арина", 89082351698, '1')
-p5 = User(5, "Григорьев Константин", 89031030066, '1')
-p6 = User(6, "Кушнеров Иван", 89326549817, '0')
-p7 = User(7, "Мезенцев Семён", 89519320462, '0')
+p1 = User(1, "Пименова Татьяна", "+79512640239", '1')
+p2 = User(2, "Логинов Максим", "+79612594865", '1')
+p3 = User(3, "Варова Ангелина", "+79058500627", '1')
+p4 = User(4, "Шпилевая Арина", "+79082351698", '1')
+p5 = User(5, "Григорьев Константин", "+79031030066", '1')
+p6 = User(6, "Кушнеров Иван", "+79326549817", '0')
+p7 = User(7, "Мезенцев Семён", "+79519320462", '0')
 
 session.add(p1)
 session.add(p2)
@@ -52,13 +52,13 @@ session.commit()
 connections.close()
 
 class Application(Base):
-    __tablename__ = "applications"
+    __tablename__ = "applicationss"
 
     id = Column("application_id", Integer, primary_key=True)
     app = Column("application", String)
     status = Column("status_application", String)
 
-    users_id = Column(Integer, ForeignKey('users.id'))
+    users_id = Column(Integer, ForeignKey('userss.id'))
 
     chief = Column("responsible_execution", String)
     start = Column("start_execution", String)
