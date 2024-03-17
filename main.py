@@ -34,7 +34,7 @@ async def get_contact(message: types.Message):
         await message.answer("Добро пожаловать!", reply_markup=kb.function_keyboard())
         user_contact = str(contact.phone_number)
     else:
-        await message.answer(f"Данного номера нет в базе сотрудников.{user_contact}")
+        await message.answer(f"Данного номера нет в базе сотрудников.")
 
 @dp.message(F.text == 'Подать заявку')
 async def new_report(message: types.Message):
