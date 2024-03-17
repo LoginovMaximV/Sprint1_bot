@@ -22,4 +22,15 @@ def edit_keyboard() -> ReplyKeyboardMarkup:
     kb.button(text=("Ответственный за исполнение"))
     kb.button(text=("Начало исполнения"))
     kb.button(text=("Конец исполнения"))
+    kb.adjust(1, 1)
+    return kb.as_markup(resize_keyboard=True)
+
+def edit_keyboard() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    kb.button(text=("Заявка"))
+    kb.button(text=("Статус заявки"))
+    kb.button(text=("ID пользователя"))
+    kb.button(text=("Ответственный за исполнение"))
+    kb.button(text=("Начало исполнения"))
+    kb.button(text=("Конец исполнения"))
     return kb.as_markup(resize_keyboard=True)
