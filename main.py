@@ -30,7 +30,9 @@ async def get_contact(message: types.Message):
     contact = message.contact
     global user_contact
     global key_admin
-    user_contact = str(contact.phone_number)[:1]
+    user_contact = str(contact.phone_number)
+    if user_contact[:1] == '+':
+        user_contact = user_contact[1:]
     if db_01.user_exist(user_contact):
         await message.answer("Добро пожаловать!", reply_markup=kb.function_keyboard())
         user_contact = str(contact.phone_number)
