@@ -108,5 +108,5 @@ def user_exist(contact_number):
     return session.query(q.exists()).scalar()
 
 def user_status(contact_number):
-    g = session.query(User.status).filter(User.number == contact_number).first()
-    return g
+    b = session.query(User.status).filter(User.number == contact_number).first()
+    return b
