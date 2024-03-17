@@ -37,7 +37,7 @@ session = Session()
 # p2 = User(2, "Логинов Максим", "+79612594865", '1')
 # p3 = User(3, "Варова Ангелина", "+79058500627", '1')
 # p4 = User(4, "Шпилевая Арина", "+79082351698", '1')
-# p5 = User(5, "Григорьев Константин", "+79031030066", '1')
+# p5 = User(5, "Григорьев Константин", "+79512757367", '1')
 # p6 = User(6, "Кушнеров Иван", "+79326549817", '0')
 # p7 = User(7, "Мезенцев Семён", "+79519320462", '0')
 #
@@ -51,7 +51,6 @@ session = Session()
 # session.expire_on_commit = False
 # session.commit()
 # connections.close()
-
 class Application(Base):
     __tablename__ = "applicationss"
 
