@@ -7,7 +7,7 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = "userss"
+    __tablename__ = "user"
 
     id = Column("id", Integer, primary_key=True)
     name = Column("name", String)
@@ -33,32 +33,34 @@ Base.metadata.create_all(bind=engin)
 Session = sessionmaker(bind=engin)
 session = Session()
 
-# p1 = User(1, "Пименова Татьяна", "+79512640239", '1')
-# p2 = User(2, "Логинов Максим", "+79612594865", '1')
-# p3 = User(3, "Варова Ангелина", "+79058500627", '1')
-# p4 = User(4, "Шпилевая Арина", "+79082351698", '1')
-# p5 = User(5, "Григорьев Константин", "+79512757367", '1')
-# p6 = User(6, "Кушнеров Иван", "+79326549817", '0')
-# p7 = User(7, "Мезенцев Семён", "+79519320462", '0')
-#
-# session.add(p1)
-# session.add(p2)
-# session.add(p3)
-# session.add(p4)
-# session.add(p5)
-# session.add(p6)
-# session.add(p7)
-# session.expire_on_commit = False
-# session.commit()
-# connections.close()
+p1 = User(1, "Пименова Татьяна", "+79512640239", '1')
+p2 = User(2, "Логинов Максим", "+79091894043", '1')
+p3 = User(3, "Варова Ангелина", "+79058500627", '1')
+p4 = User(4, "Шпилевая Арина", "+79129061392", '1')
+p5 = User(5, "Григорьев Константин", "+79512757367", '1')
+p6 = User(6, "Кушнеров Иван", "+79326549817", '0')
+p7 = User(7, "Мезенцев Семён", "+79322009131", '1')
+
+session.add(p1)
+session.add(p2)
+session.add(p3)
+session.add(p4)
+session.add(p5)
+session.add(p6)
+session.add(p7)
+session.expire_on_commit = False
+session.commit()
+connections.close()
+
+
 class Application(Base):
-    __tablename__ = "applicationss"
+    __tablename__ = "application"
 
     id = Column("application_id", Integer, primary_key=True)
     app = Column("application", String)
     status = Column("status_application", String)
 
-    users_id = Column(Integer, ForeignKey('userss.id'))
+    users_id = Column(Integer, ForeignKey('user.id'))
 
     chief = Column("responsible_execution", String)
     start = Column("start_execution", String)
@@ -87,19 +89,19 @@ Session = sessionmaker(bind=engins)
 session = Session()
 
 
-# a1 = Application(1, "Подбор земельного участка для строительства дома", "Принята", p2.id, "Агапов Алексей М.", "02.02.2024", "18.02.2024")
-# a2 = Application(2, "Юридическое сопровождение сделки с недвижимостью", "В разработке", p5.id, "Гневышев Денис И.", "25.01.2024", "10.02.2024")
-# a3 = Application(3, "Страхование недвижимости", "Выполнена", p4.id, "Свиридов Роман Р.", "05.02.2024", "15.02.2024")
-# a4 = Application(4, "Продажа квартиры", "Принята", p1.id, "Тимофеев Сергей Н.", "23.01.2024", "26.06.2024")
-# a5 = Application(5, "Оценка стоимости недвижимости", "В разработке", p3.id, "Сергеев Анатолий Л.", "02.02.2024", "18.02.2024")
-#
-# session.add(a1)
-# session.add(a2)
-# session.add(a3)
-# session.add(a4)
-# session.add(a5)
-# session.commit()
-# connections.close()
+a1 = Application(1, "Подбор земельного участка для строительства дома", "Принята", p2.id, "Агапов Алексей М.", "02.02.2024", "18.02.2024")
+a2 = Application(2, "Юридическое сопровождение сделки с недвижимостью", "В разработке", p5.id, "Гневышев Денис И.", "25.01.2024", "10.02.2024")
+a3 = Application(3, "Страхование недвижимости", "Выполнена", p4.id, "Свиридов Роман Р.", "05.02.2024", "15.02.2024")
+a4 = Application(4, "Продажа квартиры", "Принята", p1.id, "Тимофеев Сергей Н.", "23.01.2024", "26.06.2024")
+a5 = Application(5, "Оценка стоимости недвижимости", "В разработке", p3.id, "Сергеев Анатолий Л.", "02.02.2024", "18.02.2024")
+
+session.add(a1)
+session.add(a2)
+session.add(a3)
+session.add(a4)
+session.add(a5)
+session.commit()
+connections.close()
 
 def user_exist(contact_number):
     q = session.query(User.number).filter(User.number == contact_number)
