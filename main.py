@@ -48,8 +48,8 @@ async def get_contact(message: types.Message):
         await message.answer(f"Данного номера нет в базе сотрудников.")
 
 
-
-@dp.message(lambda message: key_admin == True and F.text == 'Просмотр заявок')
+@dp.message(lambda message: key_admin == True and(F.text == 'Просмотр заявок' or
+                                                  F.text == 'Редактировать заявку' or F.text == 'Подать заявку'))
 async def view_report(message: types.Message):
     if message.text == 'Просмотр заявок':
         await message.answer(resultSelect)
@@ -60,47 +60,33 @@ async def view_report(message: types.Message):
     elif message.text == 'Подать заявку':
         await message.answer("Здесь будет реализована функция подача заявки.")
 
+@dp.message(lambda message: key_admin == True and(F.text == 'Заявка' or
+                                                  F.text == 'Статус заявки' or F.text == 'ID пользователя'
+                                                  or F.text == 'Ответственный за исполнение' or F.text == 'Начало исполнения'
+                                                  or F.text == 'Конец исполнения'))
+async def work_report(message: types.Message):
+    if message.text == 'Заявка':
+        # appEdit = message.text
+        # cursor.execute("UPDATE applicationss SET app ="+ str(appEdit)+ "WHERE id = 1 " )
+        # appEditText =
+        await message.answer("функция редактирования столбца 'заявка'.")
+    if message.text == 'Статус заявки':
+        await message.answer("функция редактирования столбца 'Статус заявки'.")
+    if message.text == 'ID пользователя':
+        await message.answer("функция редактирования столбца 'ID пользователя'.")
+    if message.text == 'Ответственный за исполнение':
+        await message.answer("функция редактирования столбца 'Ответственный за исполнение'.")
+    if message.text == 'Начало исполнения':
+        await message.answer("функция редактирования столбца 'Начало исполнения'.")
+    if message.text == 'Конец исполнения':
+        await message.answer("функция редактирования столбца 'Конец исполнения'.")
 
 
 
-
-@dp.message()
-async def process_id(message: types.Message):
-    request_id = message.text  # сделайте чтоб вызывалась строка по введенному id
-    await message.answer("Что изменить:", reply_markup=kb.edit_keyboard())
-
-
-@dp.message(lambda message: key_admin == True and F.text == 'Заявка')
-async def new_reportA(message: types.Message):
-    #appEdit = message.text
-    #cursor.execute("UPDATE applicationss SET app ="+ str(appEdit)+ "WHERE id = 1 " )
-    #appEditText =
-    await message.answer("функция редактирования столбца 'заявка'.")
-
-
-@dp.message(lambda message: key_admin == True and F.text == 'Статус заявки')
-async def new_report(message: types.Message):
-    await message.answer("функция редактирования столбца 'Статус заявки'.")
-
-
-@dp.message(lambda message: key_admin == True and F.text == 'ID пользователя')
-async def new_report(message: types.Message):
-    await message.answer("функция редактирования столбца 'ID пользователя'.")
-
-
-@dp.message(lambda message: key_admin == True and F.text == 'Ответственный за исполнение')
-async def new_report(message: types.Message):
-    await message.answer("функция редактирования столбца 'Ответственный за исполнение'.")
-
-
-@dp.message(lambda message: key_admin == True and F.text == 'Начало исполнения')
-async def new_report(message: types.Message):
-    await message.answer("функция редактирования столбца 'Начало исполнения'.")
-
-
-@dp.message(lambda message: key_admin == True and F.text == 'Конец исполнения')
-async def new_report(message: types.Message):
-    await message.answer("функция редактирования столбца 'Конец исполнения'.")
+#@dp.message()
+#async def process_id(message: types.Message):
+    #request_id = message.text  # сделайте чтоб вызывалась строка по введенному id
+    #await message.answer("Что изменить:", reply_markup=kb.edit_keyboard())
 
 
 async def main() -> None:
