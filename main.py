@@ -42,7 +42,7 @@ async def get_contact(message: types.Message):
         user_contact = user_contact[1:]
     if db_01.user_exist(user_contact):
         if db_01.user_status(user_contact):
-            await  message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. Добро пожаловать!", reply_markup=kb.function_keyboard())
+            await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. Добро пожаловать!", reply_markup=kb.function_keyboard())
             user_contact = str(contact.phone_number)
             key_admin = True
         else:
