@@ -29,8 +29,11 @@ key_admin = False
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    await message.answer(text="Здравствуйте!\n"
-                              "Отправьте номер телефона для авторизации.", reply_markup=kb.contact_keyboard())
+    await message.answer(text="Привет!\n"
+                              "Я - бот HelpDesk, сделанный для упрощения работы с заявками. "
+                              "Вы можете просматривать, редактировать и подавать заявки. Для начала "
+                              "работы необходимо авторизоваться по номеру телефона — просто нажмите "
+                              "кнопку 'Отправить'.", reply_markup=kb.contact_keyboard())
 
 @dp.message(F.contact)
 async def get_contact(message: types.Message):
@@ -51,45 +54,54 @@ async def get_contact(message: types.Message):
         await message.answer(f"Данного номера нет в базе сотрудников.")
 
 
-@dp.message(lambda message: key_admin == True and(F.text == 'Просмотр заявок' or
-                                                  F.text == 'Редактировать заявку' or F.text == 'Подать заявку'))
+@dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
-    if message.text == 'Просмотр заявок':
-        await message.answer(resultSelect)
-    elif message.text == 'Редактировать заявку':
-        await message.answer("Введите ID заявки:")
-        request_id = message.text
-        await message.answer("Что изменить:", reply_markup=kb.edit_keyboard())
-    elif message.text == 'Подать заявку':
-        await message.answer("Здесь будет реализована функция подача заявки.")
+    await message.answer(resultSelect)
 
-@dp.message(lambda message: key_admin == True and(F.text == 'Заявка' or
-                                                  F.text == 'Статус заявки' or F.text == 'ID пользователя'
-                                                  or F.text == 'Ответственный за исполнение' or F.text == 'Начало исполнения'
-                                                  or F.text == 'Конец исполнения'))
+
+@dp.message(lambda message: key_admin == True, F.text == 'Редактировать заявку')
+async def edit_report(message: types.Message):
+    await message.answer("Введите ID заявки:")
+    request_id = message.text
+    await message.answer("Что изменить:", reply_markup=kb.edit_keyboard())
+
+
+@dp.message(lambda message:key_admin == True, F.text == 'Подать заявку')
+async def new_report(message: types.Message):
+    await message.answer("Здесь будет реализована функция подача заявки.")
+
+
+@dp.message(lambda message: key_admin == True, F.text == 'Заявка')
 async def work_report(message: types.Message):
-    if message.text == 'Заявка':
-        # appEdit = message.text
-        # cursor.execute("UPDATE applicationss SET app ="+ str(appEdit)+ "WHERE id = 1 " )
-        # appEditText =
-        await message.answer("функция редактирования столбца 'заявка'.")
-    if message.text == 'Статус заявки':
-        await message.answer("функция редактирования столбца 'Статус заявки'.")
-    if message.text == 'ID пользователя':
-        await message.answer("функция редактирования столбца 'ID пользователя'.")
-    if message.text == 'Ответственный за исполнение':
-        await message.answer("функция редактирования столбца 'Ответственный за исполнение'.")
-    if message.text == 'Начало исполнения':
-        await message.answer("функция редактирования столбца 'Начало исполнения'.")
-    if message.text == 'Конец исполнения':
-        await message.answer("функция редактирования столбца 'Конец исполнения'.")
+    # appEdit = message.text
+    # cursor.execute("UPDATE applicationss SET app ="+ str(appEdit)+ "WHERE id = 1 " )
+    # appEditText =
+    await message.answer("функция редактирования столбца 'заявка'.")
 
 
+@dp.message(lambda message: key_admin == True, F.text == 'Статус заявки')
+async def work_status(message: types.Message):
+    await message.answer("функция редактирования столбца 'Статус заявки'.")
 
-#@dp.message()
-#async def process_id(message: types.Message):
-    #request_id = message.text  # сделайте чтоб вызывалась строка по введенному id
-    #await message.answer("Что изменить:", reply_markup=kb.edit_keyboard())
+
+@dp.message(lambda message: key_admin == True, F.text == 'ID пользователя')
+async def work_id(message: types.Message):
+    await message.answer("функция редактирования столбца 'ID пользователя'.")
+
+
+@dp.message(lambda message: key_admin == True, F.text == 'Ответственный за исполнение')
+async def work_employer(message: types.Message):
+    await message.answer("функция редактирования столбца 'Ответственный за исполнение'.")
+
+
+@dp.message(lambda message: key_admin == True, F.text == 'Начало исполнения')
+async def work_start(message: types.Message):
+    await message.answer("функция редактирования столбца 'Начало исполнения'.")
+
+
+@dp.message(lambda message: key_admin == True, F.text == 'Конец исполнения')
+async def work_finish(message: types.Message):
+    await message.answer("функция редактирования столбца 'Конец исполнения'.")
 
 
 async def main() -> None:
