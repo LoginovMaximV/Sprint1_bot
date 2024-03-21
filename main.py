@@ -16,6 +16,9 @@ from dotenv import load_dotenv
 from aiogram.client.bot import DefaultBotProperties
 from connection import BD
 from connection import cursor
+from aiogram.filters import Command, StateFilter
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
 
 tabl = BD()
 resultSelect = tabl.ss()
@@ -27,6 +30,13 @@ admin_phone_number = os.getenv("ADMIN_NUMBER")
 user_contact = ''
 key_admin = False
 
+
+
+class HelpDesk(StatesGroup):
+    choosing_report_number = State()
+    choosing_food_size = State()
+
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await message.answer(text="Привет!\n"
@@ -34,6 +44,7 @@ async def command_start_handler(message: Message) -> None:
                               "Вы можете просматривать, редактировать и подавать заявки. Для начала "
                               "работы необходимо авторизоваться по номеру телефона — просто нажмите "
                               "кнопку 'Отправить'.", reply_markup=kb.contact_keyboard())
+
 
 @dp.message(F.contact)
 async def get_contact(message: types.Message):
@@ -45,7 +56,8 @@ async def get_contact(message: types.Message):
         user_contact = user_contact[1:]
     if db_01.user_exist(user_contact):
         if db_01.user_status(user_contact):
-            await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. Добро пожаловать!", reply_markup=kb.function_keyboard())
+            await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. Добро пожаловать!",
+                                 reply_markup=kb.function_keyboard())
             user_contact = str(contact.phone_number)
             key_admin = True
         else:
@@ -54,16 +66,31 @@ async def get_contact(message: types.Message):
         await message.answer(f"Данного номера нет в базе сотрудников.")
 
 
+@dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок', HelpDesk.choosing_report_number)
+async def view_report(message: types.Message):
+    await message.answer(resultSelect)
+    await message.answer('Введите номер редактируемой заявки:')
+
+
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
     await message.answer(resultSelect)
 
 
 @dp.message(lambda message: key_admin == True, F.text == 'Редактировать заявку')
-async def edit_report(message: types.Message):
-    await message.answer("Введите ID заявки:")
-    request_id = message.text
-    await message.answer("Что изменить:", reply_markup=kb.edit_keyboard())
+async def edit_report(message: types.Message, state: FSMContext):
+    await state.set_state(HelpDesk.choosing_report_number)
+    await message.answer("Просмотрите заявки и введите номер редактируемой заявки:", reply_markup=kb.view_keyboard())
+
+
+@dp.message(HelpDesk.choosing_report_number)
+async def report_number(message: types.Message, state: FSMContext):
+    await state.update_data(number_report=message.text)
+    data = await state.get_data() #здесь хранится номер заявки
+    await message.answer(f'Выберите, что необходимо изменить. \n report_number: {data['number_report']}',  #здесь проверил сохранение введенного номера
+                         reply_markup=kb.edit_keyboard())
+    await state.clear()
+
 
 
 @dp.message(lambda message:key_admin == True, F.text == 'Подать заявку')
