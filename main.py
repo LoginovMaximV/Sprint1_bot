@@ -29,12 +29,19 @@ dp = Dispatcher()
 admin_phone_number = os.getenv("ADMIN_NUMBER")
 user_contact = ''
 key_admin = False
-
+available_problem_types = ["Проблема с интернетом"]
+available_os_types = ["Windows", "macOS", "Linux"]
+available_answers = ["Отправить", "Отменить"]
 
 
 class HelpDesk(StatesGroup):
     choosing_report_number = State()
-    choosing_food_size = State()
+    choosing_problem_type = State()
+    choosing_os = State()
+    writing_address = State()
+    writing_network_name = State()
+    send_or_cancel = State()
+    uncommon_problem = State()
 
 
 @dp.message(CommandStart())
@@ -92,10 +99,77 @@ async def report_number(message: types.Message, state: FSMContext):
     await state.clear()
 
 
-
 @dp.message(lambda message:key_admin == True, F.text == 'Подать заявку')
-async def new_report(message: types.Message):
-    await message.answer("Здесь будет реализована функция подача заявки.")
+async def new_report(message: types.Message, state: FSMContext):
+    await message.answer("Выберите проблему из списка:", reply_markup=kb.report_keyboard())
+    await state.set_state(HelpDesk.choosing_problem_type)
+
+
+@dp.message(HelpDesk.choosing_problem_type, F.text == 'Другое')
+async def report_chosen(message: Message, state: FSMContext):
+    await message.answer(
+        text="Кратко опишите вашу проблему:")
+    await state.set_state(HelpDesk.uncommon_problem)
+
+
+@dp.message(HelpDesk.choosing_problem_type, F.text.in_(available_problem_types))
+async def report_chosen(message: Message, state: FSMContext):
+    await state.update_data(chosen_problem=message.text)
+    await message.answer(
+        text="Введите название вашей сети:")
+    await state.set_state(HelpDesk.writing_network_name)
+
+
+@dp.message(HelpDesk.uncommon_problem)
+async def report_chosen(message: Message, state: FSMContext):
+    await state.update_data(chosen_problem=message.text)
+    await message.answer(
+        text="Введите название вашей сети:")
+    await state.set_state(HelpDesk.writing_network_name)
+
+
+@dp.message(HelpDesk.writing_network_name)
+async def report_chosen(message: Message, state: FSMContext):
+    await state.update_data(network_name=message.text)
+    await message.answer(
+        text="Укажите вашу ОС:",
+        reply_markup=kb.os_choose()
+    )
+    await state.set_state(HelpDesk.choosing_os)
+
+
+@dp.message(HelpDesk.choosing_os, F.text.in_(available_os_types))
+async def report_chosen(message: Message, state: FSMContext):
+    await state.update_data(chosen_os=message.text)
+    await message.answer(
+        text="Введите ваш адрес:")
+    await state.set_state(HelpDesk.writing_address)
+
+
+@dp.message(HelpDesk.writing_address)
+async def report_chosen(message: Message, state: FSMContext):
+    await state.update_data(user_address=message.text)
+    report_data = await state.get_data()
+    await message.answer(
+        text=f"Вы ввели следующие данные: \nПроблема: {report_data['chosen_problem']} \n"
+             f"Название сети: {report_data['network_name']} \n"
+             f"Операционная система: {report_data['chosen_os']} \n"
+             f"Адрес: {report_data['user_address']} \n"
+             f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.", reply_markup=kb.new_report_keyboard())
+    await state.set_state(HelpDesk.send_or_cancel)
+
+
+@dp.message(HelpDesk.send_or_cancel, F.text == 'Отменить')
+async def cancel(message: Message, state: FSMContext):
+    await message.answer(text="Подача заявки отменена.", reply_markup=kb.function_keyboard())
+    await state.clear()
+
+
+@dp.message(HelpDesk.send_or_cancel, F.text == 'Отправить')
+async def send(message: Message, state: FSMContext):
+    # здесь уже сами реализуете функцию подачи
+    await message.answer(text="Заявка успешно подана!", reply_markup=kb.function_keyboard())
+    await state.clear()
 
 
 @dp.message(lambda message: key_admin == True, F.text == 'Заявка')

@@ -36,3 +36,27 @@ def view_keyboard() -> ReplyKeyboardMarkup:
     kb.adjust()
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
+
+def report_keyboard() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    kb.button(text="Проблема с интернетом")
+    kb.button(text="Другое")
+    kb.adjust(1, 1)
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
+
+
+def os_choose() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    kb.button(text="macOS")
+    kb.button(text="Windows")
+    kb.button(text="Linux")
+    kb.adjust()
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
+
+
+def new_report_keyboard() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    kb.button(text="Отправить")
+    kb.button(text="Отменить")
+    kb.adjust(1,1)
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
