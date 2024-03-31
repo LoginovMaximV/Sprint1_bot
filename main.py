@@ -178,7 +178,7 @@ async def send(message: Message, state: FSMContext):
             "description": "{report_data['network_name']},{report_data['chosen_os']},{report_data['user_address']}",
             "requester": {{
                 "id": "4",
-                "name": "administrator"sese
+                "name": "administrator"
             }}
         }}
     }}'''
