@@ -5,6 +5,7 @@ import logging
 import sys
 import sqlalchemy
 import db_01
+import requests
 
 
 from aiogram import Bot, Dispatcher, F, types
@@ -20,6 +21,8 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
+url = 'https://141.101.201.70:8444/api/v3/requests'
+headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
 tabl = BD()
 resultSelect = tabl.ss()
 load_dotenv()
@@ -167,7 +170,22 @@ async def cancel(message: Message, state: FSMContext):
 
 @dp.message(HelpDesk.send_or_cancel, F.text == 'Отправить')
 async def send(message: Message, state: FSMContext):
-    # здесь уже сами реализуете функцию подачи
+    report_data = await state.get_data()
+
+    input_data = f'''{{
+        "request": {{
+            "subject": "{report_data['chosen_problem']}",
+            "description": "{report_data['network_name']},{report_data['chosen_os']},{report_data['user_address']}",
+            "requester": {{
+                "id": "4",
+                "name": "administrator"sese
+            }}
+        }}
+    }}'''
+    data = {'input_data': input_data}
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    print(response.text)
+    print(response.status_code)
     await message.answer(text="Заявка успешно подана!", reply_markup=kb.function_keyboard())
     await state.clear()
 
