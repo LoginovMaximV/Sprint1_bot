@@ -84,7 +84,38 @@ async def view_report(message: types.Message):
 
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
-    await message.answer(resultSelect)
+    input_data = '''{
+        "list_info": {
+            "row_count": 20,
+            "start_index": 1,
+            "sort_field": "subject",
+            "sort_order": "asc",
+            "get_total_count": true,
+            "search_fields": {
+                "requester.name": "administrator"
+            },
+        }
+    }'''
+    params = {'input_data': input_data}
+    response = requests.get(url, headers=headers, params=params, verify=False)
+    print(response.text)
+    if response.status_code == 200:
+        data = response.json()
+        requests_list = data.get('requests', [])
+
+        if requests_list:
+            for request in requests_list:
+                requester_name = request['created_by']['name']
+                subject = request['subject']
+                description = request['short_description']
+                status = request['status']
+                start_time = request['created_time']
+                finish_time = request['due_by_time']
+                await message.answer(f"Имя создателя заявки: {requester_name}, Тема: {subject}, Описание: {description}, Статус: {status}, Дата отправки: {start_time}, Дата окончания: {finish_time}")
+        else:
+            await message.answer("Не найдено заявок для пользователя 'administrator'")
+    else:
+        await message.answer("Ошибка при получении данных. Попробуйте позже.")
 
 
 @dp.message(lambda message: key_admin == True, F.text == 'Редактировать заявку')
