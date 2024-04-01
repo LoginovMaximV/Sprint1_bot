@@ -5,6 +5,8 @@ import logging
 import sys
 import sqlalchemy
 import db_01
+import requests
+
 
 
 from aiogram import Bot, Dispatcher, F, types
@@ -20,6 +22,8 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
+url = 'https://141.101.201.70:8444/api/v3/requests'
+headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
 tabl = BD()
 resultSelect = tabl.ss()
 load_dotenv()
@@ -81,7 +85,38 @@ async def view_report(message: types.Message):
 
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
-    await message.answer(resultSelect)
+    input_data = '''{
+        "list_info": {
+            "row_count": 20,
+            "start_index": 1,
+            "sort_field": "subject",
+            "sort_order": "asc",
+            "get_total_count": true,
+            "search_fields": {
+                "requester.name": "administrator"
+            },
+        }
+    }'''
+    params = {'input_data': input_data}
+    response = requests.get(url, headers=headers, params=params, verify=False)
+    print(response.text)
+    if response.status_code == 200:
+        data = response.json()
+        requests_list = data.get('requests', [])
+
+        if requests_list:
+            for request in requests_list:
+                requester_name = request['created_by']['name']
+                subject = request['subject']
+                description = request['short_description']
+                status = request['status']
+                start_time = request['created_time']
+                finish_time = request['due_by_time']
+                await message.answer(f"Имя создателя заявки: {requester_name}, Тема: {subject}, Описание: {description}, Статус: {status}, Дата отправки: {start_time}, Дата окончания: {finish_time}")
+        else:
+            await message.answer("Не найдено заявок для пользователя 'administrator'")
+    else:
+        await message.answer("Ошибка при получении данных. Попробуйте позже.")
 
 
 @dp.message(lambda message: key_admin == True, F.text == 'Редактировать заявку')
@@ -167,7 +202,22 @@ async def cancel(message: Message, state: FSMContext):
 
 @dp.message(HelpDesk.send_or_cancel, F.text == 'Отправить')
 async def send(message: Message, state: FSMContext):
-    # здесь уже сами реализуете функцию подачи
+    report_data = await state.get_data()
+
+    input_data = f'''{{
+        "request": {{
+            "subject": "{report_data['chosen_problem']}",
+            "description": "{report_data['network_name']},{report_data['chosen_os']},{report_data['user_address']}",
+            "requester": {{
+                "id": "4",
+                "name": "administrator"
+            }}
+        }}
+    }}'''
+    data = {'input_data': input_data}
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    print(response.text)
+    print(response.status_code)
     await message.answer(text="Заявка успешно подана!", reply_markup=kb.function_keyboard())
     await state.clear()
 
