@@ -1,9 +1,9 @@
 
 import asyncio
+import json
 import os
 import logging
 import sys
-import sqlalchemy
 import db_01
 import requests
 
@@ -20,6 +20,8 @@ from connection import cursor
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from db_01 import User, session
+from test import auth
 
 url = 'https://141.101.201.70:8444/api/v3/requests'
 headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
@@ -45,6 +47,7 @@ class HelpDesk(StatesGroup):
     writing_network_name = State()
     send_or_cancel = State()
     uncommon_problem = State()
+    writing_email = State()
 
 
 @dp.message(CommandStart())
@@ -62,40 +65,47 @@ async def get_contact(message: types.Message):
     global user_contact
     global key_admin
     user_contact = str(contact.phone_number)
-    if user_contact[:1] == '+':
+    if user_contact.startswith('+'):
         user_contact = user_contact[1:]
+
+    global matched_user
+    matched_user = session.query(User).filter(User.number == int(user_contact)).first()
+
     if db_01.user_exist(user_contact):
         if db_01.user_status(user_contact):
-            await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. Добро пожаловать!",
-                                 reply_markup=kb.function_keyboard())
-            user_contact = str(contact.phone_number)
-            key_admin = True
+            if matched_user:
+                await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. Добро пожаловать " + str(matched_user.name) + '!',
+                                     reply_markup=kb.function_keyboard())
+                user_contact = str(contact.phone_number)
+                key_admin = True
         else:
             await message.answer(f"Статус пользователя не активен. Вам закрыт доступ к заявкам")
     else:
         await message.answer(f"Данного номера нет в базе сотрудников.")
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок', HelpDesk.choosing_report_number)
 async def view_report(message: types.Message):
     await message.answer(resultSelect)
     await message.answer('Введите номер редактируемой заявки:')
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
-    input_data = '''{
-        "list_info": {
+    input_data = f'''{{
+        "list_info": {{
             "row_count": 20,
             "start_index": 1,
             "sort_field": "subject",
             "sort_order": "asc",
             "get_total_count": true,
-            "search_fields": {
-                "requester.name": "administrator"
-            },
-        }
-    }'''
+            "search_fields": {{
+                "requester.name": 'administrator',
+            }},
+        }}
+    }}'''
     params = {'input_data': input_data}
     response = requests.get(url, headers=headers, params=params, verify=False)
     print(response.text)
@@ -108,22 +118,29 @@ async def view_report(message: types.Message):
                 requester_name = request['created_by']['name']
                 subject = request['subject']
                 description = request['short_description']
-                status = request['status']
-                start_time = request['created_time']
-                finish_time = request['due_by_time']
-                await message.answer(f"Имя создателя заявки: {requester_name}, Тема: {subject}, Описание: {description}, Статус: {status}, Дата отправки: {start_time}, Дата окончания: {finish_time}")
+                status = request['status']['name']
+                group = request['group']['name']
+                finish_time = request['due_by_time']['display_value']
+                await message.answer(f"Имя создателя заявки: {requester_name},\n"
+                                     f"Тема: {subject},\n"
+                                     f"Описание: {description},\n"
+                                     f"Статус: {status},\n"
+                                     f"Группа: {group},\n"
+                                     f"Срок выполнения: {finish_time}")
         else:
-            await message.answer("Не найдено заявок для пользователя 'administrator'")
+            await message.answer(f"Не найдено заявок для пользователя {matched_user.name}")
     else:
         await message.answer("Ошибка при получении данных. Попробуйте позже.")
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'Редактировать заявку')
 async def edit_report(message: types.Message, state: FSMContext):
     await state.set_state(HelpDesk.choosing_report_number)
     await message.answer("Просмотрите заявки и введите номер редактируемой заявки:", reply_markup=kb.view_keyboard())
 
 
+@auth
 @dp.message(HelpDesk.choosing_report_number)
 async def report_number(message: types.Message, state: FSMContext):
     await state.update_data(number_report=message.text)
@@ -133,12 +150,14 @@ async def report_number(message: types.Message, state: FSMContext):
     await state.clear()
 
 
+@auth
 @dp.message(lambda message:key_admin == True, F.text == 'Подать заявку')
 async def new_report(message: types.Message, state: FSMContext):
     await message.answer("Выберите проблему из списка:", reply_markup=kb.report_keyboard())
     await state.set_state(HelpDesk.choosing_problem_type)
 
 
+@auth
 @dp.message(HelpDesk.choosing_problem_type, F.text == 'Другое')
 async def report_chosen(message: Message, state: FSMContext):
     await message.answer(
@@ -146,6 +165,7 @@ async def report_chosen(message: Message, state: FSMContext):
     await state.set_state(HelpDesk.uncommon_problem)
 
 
+@auth
 @dp.message(HelpDesk.choosing_problem_type, F.text.in_(available_problem_types))
 async def report_chosen(message: Message, state: FSMContext):
     await state.update_data(chosen_problem=message.text)
@@ -154,6 +174,7 @@ async def report_chosen(message: Message, state: FSMContext):
     await state.set_state(HelpDesk.writing_network_name)
 
 
+@auth
 @dp.message(HelpDesk.uncommon_problem)
 async def report_chosen(message: Message, state: FSMContext):
     await state.update_data(chosen_problem=message.text)
@@ -162,6 +183,7 @@ async def report_chosen(message: Message, state: FSMContext):
     await state.set_state(HelpDesk.writing_network_name)
 
 
+@auth
 @dp.message(HelpDesk.writing_network_name)
 async def report_chosen(message: Message, state: FSMContext):
     await state.update_data(network_name=message.text)
@@ -172,7 +194,17 @@ async def report_chosen(message: Message, state: FSMContext):
     await state.set_state(HelpDesk.choosing_os)
 
 
+@auth
 @dp.message(HelpDesk.choosing_os, F.text.in_(available_os_types))
+async  def report_chosen(message: Message, state: FSMContext):
+    await state.update_data(email_name=message.text)
+    await message.answer(
+        text="Введите свой email:")
+    await state.set_state(HelpDesk.writing_email)
+
+
+@auth
+@dp.message(HelpDesk.writing_email)
 async def report_chosen(message: Message, state: FSMContext):
     await state.update_data(chosen_os=message.text)
     await message.answer(
@@ -180,12 +212,14 @@ async def report_chosen(message: Message, state: FSMContext):
     await state.set_state(HelpDesk.writing_address)
 
 
+@auth
 @dp.message(HelpDesk.writing_address)
 async def report_chosen(message: Message, state: FSMContext):
     await state.update_data(user_address=message.text)
     report_data = await state.get_data()
     await message.answer(
         text=f"Вы ввели следующие данные: \nПроблема: {report_data['chosen_problem']} \n"
+             f"Email: {report_data['email_name']}"
              f"Название сети: {report_data['network_name']} \n"
              f"Операционная система: {report_data['chosen_os']} \n"
              f"Адрес: {report_data['user_address']} \n"
@@ -193,34 +227,43 @@ async def report_chosen(message: Message, state: FSMContext):
     await state.set_state(HelpDesk.send_or_cancel)
 
 
+@auth
 @dp.message(HelpDesk.send_or_cancel, F.text == 'Отменить')
 async def cancel(message: Message, state: FSMContext):
     await message.answer(text="Подача заявки отменена.", reply_markup=kb.function_keyboard())
     await state.clear()
 
 
+@auth
 @dp.message(HelpDesk.send_or_cancel, F.text == 'Отправить')
 async def send(message: Message, state: FSMContext):
     report_data = await state.get_data()
+    if report_data['chosen_problem'] == "Проблема с интернетом":
+        category = 'Системное администрирование'
 
     input_data = f'''{{
         "request": {{
             "subject": "{report_data['chosen_problem']}",
-            "description": "{report_data['network_name']},{report_data['chosen_os']},{report_data['user_address']}",
+            "description": "{report_data['network_name']}, {report_data['chosen_os']}, {report_data['user_address']}",
             "requester": {{
                 "id": "4",
-                "name": "administrator"
+                "name": {matched_user.name},
+                "email_id": "{report_data['email_name']}",
+                "phone": "{user_contact}"
             }}
         }}
     }}'''
     data = {'input_data': input_data}
     response = requests.post(url, headers=headers, data=data, verify=False)
-    print(response.text)
-    print(response.status_code)
-    await message.answer(text="Заявка успешно подана!", reply_markup=kb.function_keyboard())
+    json_data = json.loads(response.text)
+    request_id = json_data["request"]["id"]
+    await message.answer(text="Заявка успешно подана!\n"
+                              f"Номер вашей заявки {request_id}", reply_markup=kb.function_keyboard())
+
     await state.clear()
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'Заявка')
 async def work_report(message: types.Message):
     # appEdit = message.text
@@ -229,29 +272,35 @@ async def work_report(message: types.Message):
     await message.answer("функция редактирования столбца 'заявка'.")
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'Статус заявки')
 async def work_status(message: types.Message):
     await message.answer("функция редактирования столбца 'Статус заявки'.")
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'ID пользователя')
 async def work_id(message: types.Message):
     await message.answer("функция редактирования столбца 'ID пользователя'.")
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'Ответственный за исполнение')
 async def work_employer(message: types.Message):
     await message.answer("функция редактирования столбца 'Ответственный за исполнение'.")
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'Начало исполнения')
 async def work_start(message: types.Message):
     await message.answer("функция редактирования столбца 'Начало исполнения'.")
 
 
+@auth
 @dp.message(lambda message: key_admin == True, F.text == 'Конец исполнения')
 async def work_finish(message: types.Message):
     await message.answer("функция редактирования столбца 'Конец исполнения'.")
+
 
 
 async def main() -> None:
