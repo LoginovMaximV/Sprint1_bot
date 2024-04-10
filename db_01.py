@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, ForeignKey, Column, String, BigInteger, Integer, text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, backref
-from sqlalchemy.sql import exists
+from sqlalchemy.orm import sessionmaker
+
 
 Base = declarative_base()
 
@@ -23,6 +23,10 @@ class User(Base):
     def __repr__(self):
         return f"({self.id}, {self.name}, {self.number}, {self.status})"
 
+    def save_user_to_db(name, number):
+        new_user = User(name=name, number=number, status="active")
+        session.add(new_user)
+        session.commit()
 
 engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
 
