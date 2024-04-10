@@ -135,7 +135,7 @@ async def report_number(message: types.Message, state: FSMContext):
 
 @dp.message(lambda message:key_admin == True, F.text == 'Подать заявку')
 async def new_report(message: types.Message, state: FSMContext):
-    await message.answer("Выберите проблему из списка:", reply_markup=kb.report_keyboard())
+    await message.answer("Выберите проблему из списка:", reply_markup=kb.button_data())
     await state.set_state(HelpDesk.choosing_problem_type)
 
 

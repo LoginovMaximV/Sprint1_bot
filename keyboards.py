@@ -1,5 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram import types
+import db_01
 
 
 def contact_keyboard() -> ReplyKeyboardMarkup:
@@ -42,6 +44,14 @@ def report_keyboard() -> ReplyKeyboardMarkup:
     kb.button(text="Проблема с интернетом")
     kb.button(text="Другое")
     kb.adjust(1, 1)
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
+
+
+def button_data() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    for button in db_01.Buttons.problem:
+        button_text = button[0]
+        kb.add(button_text)
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
