@@ -111,15 +111,13 @@ session = Session()
 class Buttons(Base):
     __tablename__ = "button"
 
-    problem = Column("problem", String)
-    abcd = Column("abcd", String)
+    problem = Column("problem", String, primary_key=True)
 
-    def __init__(self, problem, abcd):
+    def __init__(self, problem):
         self.problem = problem
-        self.abcd = abcd
 
     def __repr__(self):
-        return f"({self.problem}, {self.abcd})"
+        return f"({self.problem})"
 
 
 engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
@@ -131,13 +129,13 @@ Base.metadata.create_all(bind=engin)
 Session = sessionmaker(bind=engin)
 session = Session()
 
-b1 = Buttons("проблема 1", "А")
-b2 = Buttons("проблема 2", "Б")
-b3 = Buttons("проблема 3", "В")
-
-session.add(b1)
-session.add(b2)
-session.add(b3)
+# b1 = Buttons("проблема с интернетом")
+# b2 = Buttons("проблема 2")
+# b3 = Buttons("Другое")
+#
+# session.add(b1)
+# session.add(b2)
+# session.add(b3)
 
 session.expire_on_commit = False
 session.commit()
