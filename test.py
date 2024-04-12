@@ -14,3 +14,11 @@ def auth(func):
     return wrapper
 
 #Нужно протестировать!
+#"email_id": "{report_data['email_name']}"
+#@auth
+#@dp.message(HelpDesk.choosing_os)
+#async def report_chosen(message: Message, state: FSMContext):
+    #await state.update_data(email_name=message.text)
+    #await message.answer(
+      #  text="Введите свой email:")
+    #await state.set_state(HelpDesk.writing_email)
