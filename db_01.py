@@ -119,6 +119,11 @@ class Buttons(Base):
     def __repr__(self):
         return f"({self.problem})"
 
+    def save_problem_to_db(problem):
+        new_problem = Buttons(problem=problem)
+        session.add(new_problem)
+        session.commit()
+
 
 engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
 
