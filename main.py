@@ -113,14 +113,14 @@ async def view_report(message: types.Message):
 
         if requests_list:
             for request in requests_list:
-                request_id = request['request']['id']
+                #request_id = request['request']['id']
                 subject = request['subject']
                 description = request['short_description']
                 status = request['status']['name']
                 group = request['group']['name']
                 finish_time = request['due_by_time']['display_value']
                 await message.answer(
-                                     f"{request_id}: {subject}\n"
+                                     f" {subject}\n"
                                      f"Описание: {description}\n"
                                      f"Статус: {status}\n"
                                      f"Группа: {group}\n"
@@ -143,7 +143,7 @@ async def edit_report(message: types.Message, state: FSMContext):
 @dp.message(HelpDesk.choosing_report_number)
 async def report_number(message: types.Message, state: FSMContext):
     await state.update_data(number_report=message.text)
-    data = await state.get_data()#здесь хранится номер заявки
+    data = await state.get_data()
     await message.answer(f'Выберите, что необходимо изменить. \n report_number: {data['number_report']}',  #здесь проверил сохранение введенного номера
                          reply_markup=kb.edit_keyboard())
     await state.clear()
@@ -237,18 +237,13 @@ async def cancel(message: Message, state: FSMContext):
 @dp.message(HelpDesk.send_or_cancel, F.text == 'Отправить')
 async def send(message: Message, state: FSMContext):
     report_data = await state.get_data()
-    if report_data['chosen_problem'] == "Проблема с интернетом":
-        category = 'Системное администрирование'
-
     input_data = f'''{{
         "request": {{
             "subject": "{report_data['chosen_problem']}",
             "description": "{report_data['network_name']}, {report_data['chosen_os']}, {report_data['user_address']}",
             "requester": {{
                 "id": "4",
-                "email_id": "{report_data['email_name']}"
                 "name": "{matched_user.name}",
-                "phone": "{user_contact}",
             }}
         }}
     }}'''
