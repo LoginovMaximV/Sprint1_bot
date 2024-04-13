@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 import os
@@ -14,10 +13,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 import keyboards as kb
 from dotenv import load_dotenv
-from aiogram.client.bot import DefaultBotProperties
 from connection import BD
-from connection import cursor
-from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from db_01 import User, session
@@ -53,10 +49,10 @@ class HelpDesk(StatesGroup):
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await message.answer(text="Привет!\n"
-                              "Я - бот HelpDesk, сделанный для упрощения работы с заявками. "
-                              "Вы можете просматривать, редактировать и подавать заявки. Для начала "
-                              "работы необходимо авторизоваться по номеру телефона — просто нажмите "
-                              "кнопку 'Отправить'.", reply_markup=kb.contact_keyboard())
+                              "Я - бот HelpDesk, сделанный для упрощения работы с заявками.\n"
+                              "Вы можете просматривать, редактировать и подавать заявки.\n"
+                              "Для начала работы необходимо авторизоваться по номеру телефона \n"
+                              " — просто нажмите кнопку 'Отправить'.", reply_markup=kb.contact_keyboard())
 
 
 @dp.message(F.contact)
@@ -70,11 +66,13 @@ async def get_contact(message: types.Message):
 
     global matched_user
     matched_user = session.query(User).filter(User.number == int(user_contact)).first()
+    matched_user.name = str(matched_user.name)
 
     if db_01.user_exist(user_contact):
         if db_01.user_status(user_contact):
             if matched_user:
-                await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. Добро пожаловать " + str(matched_user.name) + '!',
+                await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. "
+                                     "Добро пожаловать " + matched_user.name + '!',
                                      reply_markup=kb.function_keyboard())
                 user_contact = str(contact.phone_number)
                 key_admin = True
@@ -102,7 +100,7 @@ async def view_report(message: types.Message):
             "sort_order": "asc",
             "get_total_count": true,
             "search_fields": {{
-                "requester.name": 'administrator',
+                "requester.name": "Баканов Артур Андреевич",
             }},
         }}
     }}'''
@@ -115,18 +113,19 @@ async def view_report(message: types.Message):
 
         if requests_list:
             for request in requests_list:
-                requester_name = request['created_by']['name']
+                #request_id = request['request']['id']
                 subject = request['subject']
                 description = request['short_description']
                 status = request['status']['name']
                 group = request['group']['name']
                 finish_time = request['due_by_time']['display_value']
-                await message.answer(f"Имя создателя заявки: {requester_name},\n"
-                                     f"Тема: {subject},\n"
-                                     f"Описание: {description},\n"
-                                     f"Статус: {status},\n"
-                                     f"Группа: {group},\n"
-                                     f"Срок выполнения: {finish_time}")
+                await message.answer(
+                                     f" {subject}\n"
+                                     f"Описание: {description}\n"
+                                     f"Статус: {status}\n"
+                                     f"Группа: {group}\n"
+                                     f"Срок выполнения: {finish_time}"
+                )
         else:
             await message.answer(f"Не найдено заявок для пользователя {matched_user.name}")
     else:
@@ -144,14 +143,14 @@ async def edit_report(message: types.Message, state: FSMContext):
 @dp.message(HelpDesk.choosing_report_number)
 async def report_number(message: types.Message, state: FSMContext):
     await state.update_data(number_report=message.text)
-    data = await state.get_data() #здесь хранится номер заявки
+    data = await state.get_data()
     await message.answer(f'Выберите, что необходимо изменить. \n report_number: {data['number_report']}',  #здесь проверил сохранение введенного номера
                          reply_markup=kb.edit_keyboard())
     await state.clear()
 
 
 @auth
-@dp.message(lambda message:key_admin == True, F.text == 'Подать заявку')
+@dp.message(lambda message: key_admin == True, F.text == 'Подать заявку')
 async def new_report(message: types.Message, state: FSMContext):
     await message.answer("Выберите проблему из списка:", reply_markup=kb.button_data())
     await state.set_state(HelpDesk.choosing_problem_type)
@@ -196,15 +195,6 @@ async def report_chosen(message: Message, state: FSMContext):
 
 @auth
 @dp.message(HelpDesk.choosing_os, F.text.in_(available_os_types))
-async  def report_chosen(message: Message, state: FSMContext):
-    await state.update_data(email_name=message.text)
-    await message.answer(
-        text="Введите свой email:")
-    await state.set_state(HelpDesk.writing_email)
-
-
-@auth
-@dp.message(HelpDesk.writing_email)
 async def report_chosen(message: Message, state: FSMContext):
     await state.update_data(chosen_os=message.text)
     await message.answer(
@@ -216,13 +206,22 @@ async def report_chosen(message: Message, state: FSMContext):
 @dp.message(HelpDesk.writing_address)
 async def report_chosen(message: Message, state: FSMContext):
     await state.update_data(user_address=message.text)
+    await message.answer(
+        text="Введите свой email:")
+    await state.set_state(HelpDesk.writing_email)
+
+
+@auth
+@dp.message(HelpDesk.writing_email)
+async def report_chosen(message: Message, state: FSMContext):
+    await state.update_data(email_name=message.text)
     report_data = await state.get_data()
     await message.answer(
         text=f"Вы ввели следующие данные: \nПроблема: {report_data['chosen_problem']} \n"
-             f"Email: {report_data['email_name']}"
              f"Название сети: {report_data['network_name']} \n"
              f"Операционная система: {report_data['chosen_os']} \n"
              f"Адрес: {report_data['user_address']} \n"
+             f"Email: {report_data['email_name']} \n"
              f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.", reply_markup=kb.new_report_keyboard())
     await state.set_state(HelpDesk.send_or_cancel)
 
@@ -238,24 +237,21 @@ async def cancel(message: Message, state: FSMContext):
 @dp.message(HelpDesk.send_or_cancel, F.text == 'Отправить')
 async def send(message: Message, state: FSMContext):
     report_data = await state.get_data()
-    if report_data['chosen_problem'] == "Проблема с интернетом":
-        category = 'Системное администрирование'
-
     input_data = f'''{{
         "request": {{
             "subject": "{report_data['chosen_problem']}",
             "description": "{report_data['network_name']}, {report_data['chosen_os']}, {report_data['user_address']}",
             "requester": {{
                 "id": "4",
-                "name": {matched_user.name},
-                "email_id": "{report_data['email_name']}",
-                "phone": "{user_contact}"
+                "name": "{matched_user.name}",
             }}
         }}
     }}'''
     data = {'input_data': input_data}
     response = requests.post(url, headers=headers, data=data, verify=False)
+    print(response.text)
     json_data = json.loads(response.text)
+    print(json_data)
     request_id = json_data["request"]["id"]
     await message.answer(text="Заявка успешно подана!\n"
                               f"Номер вашей заявки {request_id}", reply_markup=kb.function_keyboard())
