@@ -49,9 +49,9 @@ def report_keyboard() -> ReplyKeyboardMarkup:
 
 def button_data() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
-    for button in db_01.Buttons.problem:
-        button_text = button[0]
-        kb.add(button_text)
+    problems = db_01.Buttons.get_all_problems()
+    for prob in problems:
+        kb.button(text=prob)
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
@@ -60,6 +60,13 @@ def os_choose() -> ReplyKeyboardMarkup:
     kb.button(text="macOS")
     kb.button(text="Windows")
     kb.button(text="Linux")
+    kb.adjust()
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
+
+
+def screenshot() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    kb.button(text="Отменить")
     kb.adjust()
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
 

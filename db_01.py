@@ -124,6 +124,14 @@ class Buttons(Base):
         session.add(new_problem)
         session.commit()
 
+    @staticmethod
+    def get_all_problems():
+        problems = session.query(Buttons).all()
+        return [problem.problem for problem in problems]
+
+
+
+
 
 engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
 

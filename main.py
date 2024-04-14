@@ -18,6 +18,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from db_01 import User, session
 from test import auth
+from aiogram.types import FSInputFile
 
 url = 'https://141.101.201.70:8444/api/v3/requests'
 headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
@@ -30,7 +31,7 @@ dp = Dispatcher()
 admin_phone_number = os.getenv("ADMIN_NUMBER")
 user_contact = ''
 key_admin = False
-available_problem_types = ["Проблема с интернетом"]
+available_problem_types = db_01.Buttons.get_all_problems()
 available_os_types = ["Windows", "macOS", "Linux"]
 available_answers = ["Отправить", "Отменить"]
 
@@ -44,6 +45,7 @@ class HelpDesk(StatesGroup):
     send_or_cancel = State()
     uncommon_problem = State()
     writing_email = State()
+    sending_screenshot = State()
 
 
 @dp.message(CommandStart())
@@ -166,7 +168,7 @@ async def report_chosen(message: Message, state: FSMContext):
 
 @auth
 @dp.message(HelpDesk.choosing_problem_type, F.text.in_(available_problem_types))
-async def report_chosen(message: Message, state: FSMContext):
+async def wifi_name(message: Message, state: FSMContext):
     await state.update_data(chosen_problem=message.text)
     await message.answer(
         text="Введите название вашей сети:")
@@ -175,7 +177,7 @@ async def report_chosen(message: Message, state: FSMContext):
 
 @auth
 @dp.message(HelpDesk.uncommon_problem)
-async def report_chosen(message: Message, state: FSMContext):
+async def wifi_name_uncommon(message: Message, state: FSMContext):
     await state.update_data(chosen_problem=message.text)
     await message.answer(
         text="Введите название вашей сети:")
@@ -184,7 +186,7 @@ async def report_chosen(message: Message, state: FSMContext):
 
 @auth
 @dp.message(HelpDesk.writing_network_name)
-async def report_chosen(message: Message, state: FSMContext):
+async def os_type(message: Message, state: FSMContext):
     await state.update_data(network_name=message.text)
     await message.answer(
         text="Укажите вашу ОС:",
@@ -195,7 +197,7 @@ async def report_chosen(message: Message, state: FSMContext):
 
 @auth
 @dp.message(HelpDesk.choosing_os, F.text.in_(available_os_types))
-async def report_chosen(message: Message, state: FSMContext):
+async def address(message: Message, state: FSMContext):
     await state.update_data(chosen_os=message.text)
     await message.answer(
         text="Введите ваш адрес:")
@@ -204,8 +206,30 @@ async def report_chosen(message: Message, state: FSMContext):
 
 @auth
 @dp.message(HelpDesk.writing_address)
-async def report_chosen(message: Message, state: FSMContext):
+async def email_send(message: Message, state: FSMContext):
     await state.update_data(user_address=message.text)
+    await message.answer(
+        text="Приложите скриншот:",
+        reply_markup=kb.screenshot())
+    await state.set_state(HelpDesk.sending_screenshot)
+
+
+@auth
+@dp.message(HelpDesk.sending_screenshot, F.text == 'Отменить')
+async def screenshot(message: Message, state: FSMContext):
+    photod = FSInputFile("no_screen.png")
+    await state.update_data(user_screenshot=photod)
+    await message.answer(
+        text="Введите свой email:")
+    await state.set_state(HelpDesk.writing_email)
+
+
+
+
+@auth
+@dp.message(HelpDesk.sending_screenshot, F.photo)
+async def screenshot(message: Message, state: FSMContext):
+    await state.update_data(user_screenshot=message.photo[-1].file_id)
     await message.answer(
         text="Введите свой email:")
     await state.set_state(HelpDesk.writing_email)
@@ -216,8 +240,9 @@ async def report_chosen(message: Message, state: FSMContext):
 async def report_chosen(message: Message, state: FSMContext):
     await state.update_data(email_name=message.text)
     report_data = await state.get_data()
-    await message.answer(
-        text=f"Вы ввели следующие данные: \nПроблема: {report_data['chosen_problem']} \n"
+    await message.answer_photo(
+        report_data['user_screenshot'],
+        caption=f"Вы ввели следующие данные: \nПроблема: {report_data['chosen_problem']} \n"
              f"Название сети: {report_data['network_name']} \n"
              f"Операционная система: {report_data['chosen_os']} \n"
              f"Адрес: {report_data['user_address']} \n"
