@@ -47,7 +47,16 @@ def report_keyboard() -> ReplyKeyboardMarkup:
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
-def button_data() -> ReplyKeyboardMarkup:
+def problem_category() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    #problems = db_01.Buttons.get_all_problems()
+    problems = ["Интернет", "Другое"] #ЗАМЕНИТЬ НА ДАННЫЕ ИЗ БАЗЫ ДАННЫХ
+    for prob in problems:
+        kb.button(text=prob)
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
+
+
+def problem_type() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     problems = db_01.Buttons.get_all_problems()
     for prob in problems:
