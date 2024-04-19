@@ -49,7 +49,7 @@ def report_keyboard() -> ReplyKeyboardMarkup:
 
 def button_data() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
-    problems = db_01.Buttons.get_all_problems()
+    problems = db_01.Buttons.get_all_category()
     for prob in problems:
         kb.button(text=prob)
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
