@@ -8,24 +8,31 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "users"
 
-    id = Column("id", Integer, primary_key=True)
+    id = Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column("name", String)
-    number = Column("phone_number", BigInteger)
+    email = Column("email", String)
     status = Column("status", Boolean)
+    number = Column("phone_number", String)
+    admin = Column("is_admin", Boolean)
+    vip = Column("is_vip", Boolean)
 
-    def __init__(self, id, name, number, status):
-        self.id = id
+
+    def __init__(self, name, email, status, number, admin, vip):
         self.name = name
-        self.number = number
+        self.email = email
         self.status = status
+        self.number = number
+        self.admin = admin
+        self.vip = vip
+
 
     def __repr__(self):
-        return f"({self.id}, {self.name}, {self.number}, {self.status})"
+        return f"({self.name}, {self.email}, {self.status}, {self.number}, {self.admin}, {self.vip})"
 
-    def save_user_to_db(name, number):
-        new_user = User(name=name, number=number, status="active")
+    def save_user_to_db(name, email, status, number, admin, vip):
+        new_user = User(name=name, email=email, status="active", number=number, admin=admin, vip=vip)
         session.add(new_user)
         session.commit()
 
@@ -38,24 +45,24 @@ Base.metadata.create_all(bind=engin)
 Session = sessionmaker(bind=engin)
 session = Session()
 
-#p1 = User(1, "Пименова Татьяна", "+79512640239", '1')
-#p2 = User(2, "Логинов Максим", "+79091894043", '1')
-#p3 = User(3, "Варова Ангелина", "+79058500627", '1')
-#p4 = User(4, "Шпилевая Арина", "+79129061392", '1')
-#p5 = User(5, "Григорьев Константин", "+79512757367", '1')
-#p6 = User(6, "Кушнеров Иван", "+79326549817", '0')
-#p7 = User(7, "Мезенцев Семён", "+79322009131", '1')
-
-#session.add(p1)
-#session.add(p2)
-#session.add(p3)
-#session.add(p4)
-#session.add(p5)
-#session.add(p6)
-#session.add(p7)
-#session.expire_on_commit = False
-#session.commit()
-#connections.close()
+# p1 = User("Пименова Татьяна", "Tatyana.pimenova@mail.ru", True, "+79512640239", False, False)
+# p2 = User("Логинов Максим", "Maksim.loginov@mail.ru", True, "+79091894043", True, False)
+# p3 = User("Варова Ангелина", "Angelina.varova@mail.ru", True, "+79058500627", True, True)
+# p4 = User("Шпилевая Арина", "Arina.shpilevay@mail.ru", True, "+79129061392", False, False)
+# p5 = User("Григорьев Константин", "Konstantin.grigoryev!mail.ru", True, "+79512757367", False, True)
+# p6 = User("Кушнеров Иван", "Ivan.kushnerov@mail.ru", False, "+79326549817", False, False)
+# p7 = User("Мезенцев Семён", "Cemen.mezencev@mail.ru", True, "+79322009131", False, False)
+#
+# session.add(p1)
+# session.add(p2)
+# session.add(p3)
+# session.add(p4)
+# session.add(p5)
+# session.add(p6)
+# session.add(p7)
+session.expire_on_commit = False
+session.commit()
+connections.close()
 
 class Application(Base):
     __tablename__ = "application"
@@ -64,7 +71,7 @@ class Application(Base):
     app = Column("application", String)
     status = Column("status_application", String)
 
-    users_id = Column(Integer, ForeignKey('users.id'))
+    users_id = Column(UUID, ForeignKey('users.id'))
 
     chief = Column("responsible_execution", String)
     start = Column("start_execution", String)
@@ -94,19 +101,19 @@ Session = sessionmaker(bind=engins)
 session = Session()
 
 
-#a1 = Application(1, "Подбор земельного участка для строительства дома", "Принята", p2.id, "Агапов Алексей М.", "02.02.2024", "18.02.2024")
-#a2 = Application(2, "Юридическое сопровождение сделки с недвижимостью", "В разработке", p5.id, "Гневышев Денис И.", "25.01.2024", "10.02.2024")
-#a3 = Application(3, "Страхование недвижимости", "Выполнена", p4.id, "Свиридов Роман Р.", "05.02.2024", "15.02.2024")
-#a4 = Application(4, "Продажа квартиры", "Принята", p1.id, "Тимофеев Сергей Н.", "23.01.2024", "26.06.2024")
-#a5 = Application(5, "Оценка стоимости недвижимости", "В разработке", p3.id, "Сергеев Анатолий Л.", "02.02.2024", "18.02.2024")
-
-#session.add(a1)
-#session.add(a2)
-#session.add(a3)
-#session.add(a4)
-#session.add(a5)
-#session.commit()
-#connections.close()
+# a1 = Application(1, "Подбор земельного участка для строительства дома", "Принята", p2.id, "Агапов Алексей М.", "02.02.2024", "18.02.2024")
+# a2 = Application(2, "Юридическое сопровождение сделки с недвижимостью", "В разработке", p5.id, "Гневышев Денис И.", "25.01.2024", "10.02.2024")
+# a3 = Application(3, "Страхование недвижимости", "Выполнена", p4.id, "Свиридов Роман Р.", "05.02.2024", "15.02.2024")
+# a4 = Application(4, "Продажа квартиры", "Принята", p1.id, "Тимофеев Сергей Н.", "23.01.2024", "26.06.2024")
+# a5 = Application(5, "Оценка стоимости недвижимости", "В разработке", p3.id, "Сергеев Анатолий Л.", "02.02.2024", "18.02.2024")
+#
+# session.add(a1)
+# session.add(a2)
+# session.add(a3)
+# session.add(a4)
+# session.add(a5)
+session.commit()
+connections.close()
 
 
 class Buttons(Base):
@@ -194,13 +201,13 @@ Base.metadata.create_all(bind=engin)
 Session = sessionmaker(bind=engin)
 session = Session()
 
-b1 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 1")
-b2 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 2")
-b3 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 3")
-
-session.add(b1)
-session.add(b2)
-session.add(b3)
+# b1 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 1")
+# b2 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 2")
+# b3 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 3")
+#
+# session.add(b1)
+# session.add(b2)
+# session.add(b3)
 
 session.expire_on_commit = False
 session.commit()
