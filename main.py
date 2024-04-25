@@ -31,7 +31,7 @@ dp = Dispatcher()
 admin_phone_number = os.getenv("ADMIN_NUMBER")
 user_contact = ''
 key_admin = False
-available_problem_types = db_01.Buttons.get_all_problems()
+available_problem_types = db_01.Category.get_all_name()
 available_os_types = ["Windows", "macOS", "Linux"]
 available_answers = ["Отправить", "Отменить"]
 
