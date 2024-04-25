@@ -48,6 +48,38 @@ session.expire_on_commit = False
 session.commit()
 connections.close()
 
+class Problem(Base):
+    __tablename__ = "service_category"
+
+    id = Column("id", Integer, primary_key=True)
+    id_category = Column(Integer, ForeignKey('category.id'))
+    name = Column("name", String)
+
+
+    def __init__(self, id, id_category, name):
+        self.id = id
+        self.id_category = id_category
+        self.name = name
+
+    def __repr__(self):
+        return f"({self.id}, {self.id_category}, {self.name}"
+
+engins = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
+
+connections = engins.connect()
+
+
+Base.metadata.create_all(bind=engins)
+
+Session = sessionmaker(bind=engins)
+session = Session()
+
+
+
+session.commit()
+connections.close()
+
+
 class Application(Base):
     __tablename__ = "application"
 
@@ -55,7 +87,7 @@ class Application(Base):
     app = Column("application", String)
     status = Column("status_application", String)
 
-    users_id = Column(Integer, ForeignKey('userss.id'))
+    users_id = Column(Integer, ForeignKey('users.id'))
 
     chief = Column("responsible_execution", String)
     start = Column("start_execution", String)
