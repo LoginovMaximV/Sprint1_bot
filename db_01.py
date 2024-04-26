@@ -154,11 +154,16 @@ class Category(Base):
 
     @staticmethod
     def get_all_name():
-        categorys = session.query(Category).all()
-        return [name.name for name in categorys]
+        categories = session.query(Category).all()
+        return [name.name for name in categories]
 
-
-
+    @staticmethod
+    def get_id_by_name(category_name):
+        category = session.query(Category).filter(Category.name == category_name).first()
+        if category:
+            return category.id
+        else:
+            return None
 
 
 engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
@@ -178,7 +183,7 @@ class Problems(Base):
     __tablename__ = "problem"
 
     id_pr = Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    id_category_pr = Column(UUID, ForeignKey('button.id'))
+    id_category_pr = Column(UUID, ForeignKey('category.id'))
     problem = Column("problem", String)
 
     def __init__(self, id_category_pr, problem):
@@ -195,7 +200,7 @@ class Problems(Base):
 
     @staticmethod
     def get_all_problems():
-        problems = session.query(Buttons).all()
+        problems = session.query(Problems).all()
         return [problem.problem for problem in problems]
 
 
@@ -211,13 +216,13 @@ Base.metadata.create_all(bind=engin)
 Session = sessionmaker(bind=engin)
 session = Session()
 
-b1 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 1")
-b2 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 2")
-b3 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 3")
+#b1 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 1")
+#b2 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 2")
+#b3 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 3")
 
-session.add(b1)
-session.add(b2)
-session.add(b3)
+#session.add(b1)
+#session.add(b2)
+#session.add(b3)
 
 session.expire_on_commit = False
 session.commit()

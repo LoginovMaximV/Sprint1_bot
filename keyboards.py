@@ -56,6 +56,15 @@ def problem_category() -> ReplyKeyboardMarkup:
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
+def problem_type() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    problems = db_01.Category.get_all_name()
+
+    for prob in problems:
+        kb.button(text=prob)
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
+
+
 def os_choose() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     kb.button(text="macOS")
