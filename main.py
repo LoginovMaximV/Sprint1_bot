@@ -38,10 +38,10 @@ available_answers = ["Отправить", "Отменить"]
 
 class HelpDesk(StatesGroup):
     choosing_report_number = State()
+    choosing_problem_category = State()
     choosing_problem_type = State()
-    choosing_os = State()
-    writing_address = State()
-    writing_network_name = State()
+    description = State()
+    writing_theme = State()
     send_or_cancel = State()
     uncommon_problem = State()
     writing_email = State()
@@ -154,60 +154,51 @@ async def report_number(message: types.Message, state: FSMContext):
 @auth
 @dp.message(lambda message: key_admin == True, F.text == 'Подать заявку')
 async def new_report(message: types.Message, state: FSMContext):
-    await message.answer("Выберите проблему из списка:", reply_markup=kb.button_data())
+    await message.answer("Выберите категорию:", reply_markup=kb.problem_category())
+    await state.set_state(HelpDesk.choosing_problem_category)
+
+
+@auth
+@dp.message(HelpDesk.choosing_problem_category, F.text.in_(available_problem_categories))
+async def report_chosen(message: Message, state: FSMContext):
+    await state.update_data(chosen_problem_category=message.text)
+    await message.answer(
+        text="Выберите услугу:",
+        reply_markup=kb.problem_type())
     await state.set_state(HelpDesk.choosing_problem_type)
 
 
 @auth
-@dp.message(HelpDesk.choosing_problem_type, F.text == 'Другое')
-async def report_chosen(message: Message, state: FSMContext):
+@dp.message(HelpDesk.choosing_problem_category, F.text == 'Другое')
+async def theme(message: Message, state: FSMContext):
+    await state.update_data(chosen_problem=message.text, chosen_problem_category='Другое')
     await message.answer(
-        text="Кратко опишите вашу проблему:")
-    await state.set_state(HelpDesk.uncommon_problem)
+        text="Тема обращения:")
+    await state.set_state(HelpDesk.writing_theme)
 
 
 @auth
 @dp.message(HelpDesk.choosing_problem_type, F.text.in_(available_problem_types))
-async def wifi_name(message: Message, state: FSMContext):
+async def theme(message: Message, state: FSMContext):
     await state.update_data(chosen_problem=message.text)
     await message.answer(
-        text="Введите название вашей сети:")
-    await state.set_state(HelpDesk.writing_network_name)
+        text="Тема обращения:")
+    await state.set_state(HelpDesk.writing_theme)
 
 
 @auth
-@dp.message(HelpDesk.uncommon_problem)
-async def wifi_name_uncommon(message: Message, state: FSMContext):
-    await state.update_data(chosen_problem=message.text)
+@dp.message(HelpDesk.writing_theme)
+async def description(message: Message, state: FSMContext):
+    await state.update_data(theme=message.text)
     await message.answer(
-        text="Введите название вашей сети:")
-    await state.set_state(HelpDesk.writing_network_name)
+        text="Опишите проблему:")
+    await state.set_state(HelpDesk.description)
 
 
 @auth
-@dp.message(HelpDesk.writing_network_name)
-async def os_type(message: Message, state: FSMContext):
-    await state.update_data(network_name=message.text)
-    await message.answer(
-        text="Укажите вашу ОС:",
-        reply_markup=kb.os_choose()
-    )
-    await state.set_state(HelpDesk.choosing_os)
-
-
-@auth
-@dp.message(HelpDesk.choosing_os, F.text.in_(available_os_types))
-async def address(message: Message, state: FSMContext):
-    await state.update_data(chosen_os=message.text)
-    await message.answer(
-        text="Введите ваш адрес:")
-    await state.set_state(HelpDesk.writing_address)
-
-
-@auth
-@dp.message(HelpDesk.writing_address)
-async def email_send(message: Message, state: FSMContext):
-    await state.update_data(user_address=message.text)
+@dp.message(HelpDesk.description)
+async def screenshot1(message: Message, state: FSMContext):
+    await state.update_data(user_description=message.text)
     await message.answer(
         text="Приложите скриншот:",
         reply_markup=kb.screenshot())
@@ -219,35 +210,31 @@ async def email_send(message: Message, state: FSMContext):
 async def screenshot(message: Message, state: FSMContext):
     photod = FSInputFile("no_screen.png")
     await state.update_data(user_screenshot=photod)
-    await message.answer(
-        text="Введите свой email:")
-    await state.set_state(HelpDesk.writing_email)
-
-
+    report_data = await state.get_data()
+    await message.answer_photo(
+        report_data['user_screenshot'],
+        caption=f"Вы ввели следующие данные: \nКатегория: {report_data['chosen_problem_category']} \n"
+                f"Услуга: {report_data['chosen_problem']} \n"
+                f"Тема: {report_data['theme']} \n"
+                f"Описание: {report_data['user_description']} \n"
+                f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.",
+        reply_markup=kb.new_report_keyboard())
+    await state.set_state(HelpDesk.send_or_cancel)
 
 
 @auth
 @dp.message(HelpDesk.sending_screenshot, F.photo)
 async def screenshot(message: Message, state: FSMContext):
     await state.update_data(user_screenshot=message.photo[-1].file_id)
-    await message.answer(
-        text="Введите свой email:")
-    await state.set_state(HelpDesk.writing_email)
-
-
-@auth
-@dp.message(HelpDesk.writing_email)
-async def report_chosen(message: Message, state: FSMContext):
-    await state.update_data(email_name=message.text)
     report_data = await state.get_data()
     await message.answer_photo(
         report_data['user_screenshot'],
-        caption=f"Вы ввели следующие данные: \nПроблема: {report_data['chosen_problem']} \n"
-             f"Название сети: {report_data['network_name']} \n"
-             f"Операционная система: {report_data['chosen_os']} \n"
-             f"Адрес: {report_data['user_address']} \n"
-             f"Email: {report_data['email_name']} \n"
-             f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.", reply_markup=kb.new_report_keyboard())
+        caption=f"Вы ввели следующие данные: \nКатегория: {report_data['chosen_problem_category']} \n"
+                f"Услуга: {report_data['chosen_problem']} \n"
+                f"Тема: {report_data['theme']} \n"
+                f"Описание: {report_data['user_description']} \n"
+                f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.",
+        reply_markup=kb.new_report_keyboard())
     await state.set_state(HelpDesk.send_or_cancel)
 
 

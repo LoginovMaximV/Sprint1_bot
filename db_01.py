@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, ForeignKey, Column, String, BigInteger, Integer, text, UUID, Boolean
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import uuid
@@ -17,6 +18,7 @@ class User(Base):
     number = Column("phone_number", String)
     admin = Column("is_admin", Boolean)
     vip = Column("is_vip", Boolean)
+
 
 
     def __init__(self, name, email, status, number, admin, vip):
@@ -167,7 +169,55 @@ Base.metadata.create_all(bind=engin)
 
 Session = sessionmaker(bind=engin)
 session = Session()
+session.expire_on_commit = False
+session.commit()
+connections.close()
 
+
+class Problems(Base):
+    __tablename__ = "problem"
+
+    id_pr = Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id_category_pr = Column(UUID, ForeignKey('button.id'))
+    problem = Column("problem", String)
+
+    def __init__(self, id_category_pr, problem):
+        self.id_category_pr=id_category_pr
+        self.problem = problem
+
+    def __repr__(self):
+        return f"({self.id_category_pr}, {self.problem})"
+
+    def save_problem_to_db(id_category_pr, problem):
+        new_problem = Problems(id_category_pr=id_category_pr, problem=problem)
+        session.add(new_problem)
+        session.commit()
+
+    @staticmethod
+    def get_all_problems():
+        problems = session.query(Buttons).all()
+        return [problem.problem for problem in problems]
+
+
+
+
+
+engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
+
+connections = engin.connect()
+
+Base.metadata.create_all(bind=engin)
+
+Session = sessionmaker(bind=engin)
+session = Session()
+
+b1 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 1")
+b2 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 2")
+b3 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 3")
+
+session.add(b1)
+session.add(b2)
+session.add(b3)
 
 session.expire_on_commit = False
 session.commit()
