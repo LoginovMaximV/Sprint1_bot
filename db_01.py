@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine, ForeignKey, Column, String, BigInteger, Integer, text, Boolean, UUID
+from sqlalchemy import create_engine, ForeignKey, Column, String, BigInteger, Integer, text, UUID, Boolean
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import uuid
@@ -8,24 +9,31 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "users"
 
-    id = Column("id", Integer, primary_key=True)
+    id = Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column("name", String)
-    number = Column("phone_number", BigInteger)
+    email = Column("email", String)
     status = Column("status", Boolean)
+    number = Column("phone_number", String)
+    admin = Column("is_admin", Boolean)
+    vip = Column("is_vip", Boolean)
 
-    def __init__(self, id, name, number, status):
-        self.id = id
+
+
+    def __init__(self, name, email, status, number, admin, vip):
         self.name = name
-        self.number = number
+        self.email = email
         self.status = status
+        self.number = number
+        self.admin = admin
+        self.vip = vip
 
     def __repr__(self):
-        return f"({self.id}, {self.name}, {self.number}, {self.status})"
+        return f"({self.name}, {self.email}, {self.status}, {self.number}, {self.admin}, {self.vip})"
 
-    def save_user_to_db(name, number):
-        new_user = User(name=name, number=number, status="active")
+    def save_user_to_db(name, email, status, number, admin, vip):
+        new_user = User(name=name, email=email, status=status, number=number, admin=admin, vip=vip)
         session.add(new_user)
         session.commit()
 
@@ -38,24 +46,41 @@ Base.metadata.create_all(bind=engin)
 Session = sessionmaker(bind=engin)
 session = Session()
 
-#p1 = User(1, "Пименова Татьяна", "+79512640239", '1')
-#p2 = User(2, "Логинов Максим", "+79091894043", '1')
-#p3 = User(3, "Варова Ангелина", "+79058500627", '1')
-#p4 = User(4, "Шпилевая Арина", "+79129061392", '1')
-#p5 = User(5, "Григорьев Константин", "+79512757367", '1')
-#p6 = User(6, "Кушнеров Иван", "+79326549817", '0')
-#p7 = User(7, "Мезенцев Семён", "+79322009131", '1')
+session.expire_on_commit = False
+session.commit()
+connections.close()
 
-#session.add(p1)
-#session.add(p2)
-#session.add(p3)
-#session.add(p4)
-#session.add(p5)
-#session.add(p6)
-#session.add(p7)
-#session.expire_on_commit = False
-#session.commit()
-#connections.close()
+class Problem(Base):
+    __tablename__ = "service_category"
+
+    id = Column("id", Integer, primary_key=True)
+    id_category = Column(Integer, ForeignKey('category.id'))
+    name = Column("name", String)
+
+
+    def __init__(self, id, id_category, name):
+        self.id = id
+        self.id_category = id_category
+        self.name = name
+
+    def __repr__(self):
+        return f"({self.id}, {self.id_category}, {self.name}"
+
+engins = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
+
+connections = engins.connect()
+
+
+Base.metadata.create_all(bind=engins)
+
+Session = sessionmaker(bind=engins)
+session = Session()
+
+
+
+session.commit()
+connections.close()
+
 
 class Application(Base):
     __tablename__ = "application"
@@ -109,27 +134,28 @@ session = Session()
 #connections.close()
 
 
-class Buttons(Base):
-    __tablename__ = "button"
+class Category(Base):
+    __tablename__ = "category"
 
-    id_category = Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    category = Column("category", String)
+    id = Column("id", Integer, primary_key=True)
+    name = Column("name", String)
 
-    def __init__(self, category):
-        self.category = category
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
 
     def __repr__(self):
-        return f"({self.category})"
+        return f"({self.id}, {self.name})"
 
-    def save_problem_to_db(category):
-        new_category = Buttons(category=category)
-        session.add(new_category)
+    def save_name_to_db(id, name):
+        new_name = Category(id=id, name=name)
+        session.add(new_name)
         session.commit()
 
     @staticmethod
-    def get_all_category():
-        categorys = session.query(Buttons).all()
-        return [category.category for category in categorys]
+    def get_all_name():
+        categorys = session.query(Category).all()
+        return [name.name for name in categorys]
 
 
 
@@ -143,15 +169,6 @@ Base.metadata.create_all(bind=engin)
 
 Session = sessionmaker(bind=engin)
 session = Session()
-
-# b1 = Buttons("Интернет")
-# b2 = Buttons("Документооборот")
-# b3 = Buttons("Другое")
-#
-# session.add(b1)
-# session.add(b2)
-# session.add(b3)
-
 session.expire_on_commit = False
 session.commit()
 connections.close()
