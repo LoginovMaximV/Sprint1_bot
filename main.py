@@ -19,6 +19,9 @@ from aiogram.fsm.state import StatesGroup, State
 from db_01 import User, session
 from test import auth
 from aiogram.types import FSInputFile
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 url = 'https://141.101.201.70:8444/api/v3/requests'
 headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
@@ -31,7 +34,7 @@ dp = Dispatcher()
 admin_phone_number = os.getenv("ADMIN_NUMBER")
 user_contact = ''
 key_admin = False
-available_problem_types = db_01.Category.get_all_name()
+available_problem_categories = db_01.Category.get_all_name()
 available_os_types = ["Windows", "macOS", "Linux"]
 available_answers = ["Отправить", "Отменить"]
 
@@ -161,10 +164,13 @@ async def new_report(message: types.Message, state: FSMContext):
 @auth
 @dp.message(HelpDesk.choosing_problem_category, F.text.in_(available_problem_categories))
 async def report_chosen(message: Message, state: FSMContext):
+    cat_name = F.text
+    cat_id = db_01.Category.get_id_by_name(cat_name)
     await state.update_data(chosen_problem_category=message.text)
-    await message.answer(
-        text="Выберите услугу:",
-        reply_markup=kb.problem_type())
+    #await message.answer(
+        #text="Выберите услугу:",
+        #reply_markup=kb.problem_type())
+    await message.answer(f'cat_id')
     await state.set_state(HelpDesk.choosing_problem_type)
 
 
@@ -178,7 +184,7 @@ async def theme(message: Message, state: FSMContext):
 
 
 @auth
-@dp.message(HelpDesk.choosing_problem_type, F.text.in_(available_problem_types))
+@dp.message(HelpDesk.choosing_problem_type)
 async def theme(message: Message, state: FSMContext):
     await state.update_data(chosen_problem=message.text)
     await message.answer(
