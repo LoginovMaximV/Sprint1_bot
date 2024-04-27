@@ -22,6 +22,7 @@ from aiogram.types import FSInputFile
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 url = 'https://141.101.201.70:8444/api/v3/requests'
 headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
@@ -33,6 +34,7 @@ bot = Bot(TOKEN)
 dp = Dispatcher()
 admin_phone_number = os.getenv("ADMIN_NUMBER")
 user_contact = ''
+probl = []
 key_admin = False
 available_problem_categories = db_01.Category.get_all_name()
 available_os_types = ["Windows", "macOS", "Linux"]
@@ -165,13 +167,25 @@ async def new_report(message: types.Message, state: FSMContext):
 @auth
 @dp.message(HelpDesk.choosing_problem_category, F.text.in_(available_problem_categories))
 async def report_chosen(message: Message, state: FSMContext):
-    cat_name = F.text
+    cat_name = message.text
     cat_id = db_01.Category.get_id_by_name(cat_name)
+    global probl
+    probl = db_01.Problem.get_names_by_id(cat_id)
+    for x in probl:
+        kb = [
+            [
+                types.KeyboardButton(text=x)
+            ],
+        ]
+    keyboard = types.ReplyKeyboardMarkup(
+        keyboard=kb,
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
     await state.update_data(chosen_problem_category=message.text)
-    #await message.answer(
-        #text="Выберите услугу:",
-        #reply_markup=kb.problem_type())
-    await message.answer(f'cat_id')
+    await message.answer(
+        text="Выберите услугу:",
+        reply_markup=keyboard)
     await state.set_state(HelpDesk.choosing_problem_type)
 
 
