@@ -66,21 +66,22 @@ async def get_contact(message: types.Message):
     global user_contact
     global key_admin
     user_contact = str(contact.phone_number)
-    if user_contact.startswith('+'):
-        user_contact = user_contact[1:]
-
-    global matched_user
-    matched_user = session.query(User).filter(User.number == int(user_contact)).first()
-    matched_user.name = str(matched_user.name)
+    if user_contact.startswith('7'):
+        user_contact = '+' + user_contact
 
     if db_01.user_exist(user_contact):
         if db_01.user_status(user_contact):
+            global matched_user
+            matched_user = session.query(User).filter(User.number == str(user_contact)).first()
+            matched_user.name = str(matched_user.name)
             if matched_user:
                 await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. "
                                      "Добро пожаловать " + matched_user.name + '!',
                                      reply_markup=kb.function_keyboard())
                 user_contact = str(contact.phone_number)
                 key_admin = True
+            else:
+                await message.answer("Соответствующий пользователь не найден.")
         else:
             await message.answer(f"Статус пользователя не активен. Вам закрыт доступ к заявкам")
     else:

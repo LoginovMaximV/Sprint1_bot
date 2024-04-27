@@ -119,21 +119,6 @@ Session = sessionmaker(bind=engins)
 session = Session()
 
 
-#a1 = Application(1, "Подбор земельного участка для строительства дома", "Принята", p2.id, "Агапов Алексей М.", "02.02.2024", "18.02.2024")
-#a2 = Application(2, "Юридическое сопровождение сделки с недвижимостью", "В разработке", p5.id, "Гневышев Денис И.", "25.01.2024", "10.02.2024")
-#a3 = Application(3, "Страхование недвижимости", "Выполнена", p4.id, "Свиридов Роман Р.", "05.02.2024", "15.02.2024")
-#a4 = Application(4, "Продажа квартиры", "Принята", p1.id, "Тимофеев Сергей Н.", "23.01.2024", "26.06.2024")
-#a5 = Application(5, "Оценка стоимости недвижимости", "В разработке", p3.id, "Сергеев Анатолий Л.", "02.02.2024", "18.02.2024")
-
-#session.add(a1)
-#session.add(a2)
-#session.add(a3)
-#session.add(a4)
-#session.add(a5)
-#session.commit()
-#connections.close()
-
-
 class Category(Base):
     __tablename__ = "category"
 
@@ -183,7 +168,7 @@ class Problems(Base):
     __tablename__ = "problem"
 
     id_pr = Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    id_category_pr = Column(UUID, ForeignKey('category.id'))
+    id_category_pr = Column(UUID(as_uuid=True), ForeignKey('category.id'))
     problem = Column("problem", String)
 
     def __init__(self, id_category_pr, problem):
@@ -215,14 +200,6 @@ Base.metadata.create_all(bind=engin)
 
 Session = sessionmaker(bind=engin)
 session = Session()
-
-#b1 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 1")
-#b2 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 2")
-#b3 = Problems('837f8824-1077-4582-82cc-c1cfba6ab7b2', "Проблема 3")
-
-#session.add(b1)
-#session.add(b2)
-#session.add(b3)
 
 session.expire_on_commit = False
 session.commit()
