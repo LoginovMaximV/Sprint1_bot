@@ -19,10 +19,7 @@ from aiogram.fsm.state import StatesGroup, State
 from db_01 import User, session
 from test import auth
 from aiogram.types import FSInputFile
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
 
 url = 'https://141.101.201.70:8444/api/v3/requests'
 headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
@@ -34,6 +31,7 @@ bot = Bot(TOKEN)
 dp = Dispatcher()
 admin_phone_number = os.getenv("ADMIN_NUMBER")
 user_contact = ''
+matched_user = ''
 probl = []
 key_admin = False
 available_problem_categories = db_01.Category.get_all_name()
@@ -49,7 +47,6 @@ class HelpDesk(StatesGroup):
     writing_theme = State()
     send_or_cancel = State()
     uncommon_problem = State()
-    writing_email = State()
     sending_screenshot = State()
 
 
@@ -67,13 +64,13 @@ async def get_contact(message: types.Message):
     contact = message.contact
     global user_contact
     global key_admin
+    global matched_user
     user_contact = str(contact.phone_number)
     if user_contact.startswith('7'):
         user_contact = '+' + user_contact
 
     if db_01.user_exist(user_contact):
         if db_01.user_status(user_contact):
-            global matched_user
             matched_user = session.query(User).filter(User.number == str(user_contact)).first()
             matched_user.name = str(matched_user.name)
             if matched_user:
@@ -273,7 +270,7 @@ async def send(message: Message, state: FSMContext):
     input_data = f'''{{
         "request": {{
             "subject": "{report_data['chosen_problem']}",
-            "description": "{report_data['network_name']}, {report_data['chosen_os']}, {report_data['user_address']}",
+            "description": "{report_data['theme']}: {report_data['user_description']}",
             "requester": {{
                 "id": "4",
                 "name": "{matched_user.name}",
