@@ -19,8 +19,6 @@ class User(Base):
     admin = Column("is_admin", Boolean)
     vip = Column("is_vip", Boolean)
 
-
-
     def __init__(self, name, email, status, number, admin, vip):
         self.name = name
         self.email = email
@@ -36,6 +34,7 @@ class User(Base):
         new_user = User(name=name, email=email, status=status, number=number, admin=admin, vip=vip)
         session.add(new_user)
         session.commit()
+
 
 engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
 
@@ -66,6 +65,21 @@ class Problem(Base):
     def __repr__(self):
         return f"({self.id}, {self.id_category}, {self.name}"
 
+
+    @staticmethod
+    def get_all_problems():
+        problems = session.query(Problem).all()
+        return [problem.problem for problem in problems]
+
+    @staticmethod
+    def get_names_by_id(prob_id):
+        names = []
+        categories = session.query(Problem).filter(Problem.id_category == prob_id).all()
+        for category in categories:
+            names.append(category.name)
+        return names
+
+
 engins = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
 
 connections = engins.connect()
@@ -75,8 +89,6 @@ Base.metadata.create_all(bind=engins)
 
 Session = sessionmaker(bind=engins)
 session = Session()
-
-
 
 session.commit()
 connections.close()
@@ -168,7 +180,8 @@ class Problems(Base):
     __tablename__ = "problem"
 
     id_pr = Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    id_category_pr = Column(UUID(as_uuid=True), ForeignKey('category.id'))
+    #id_category_pr = Column(UUID(as_uuid=True), ForeignKey('category.id'))
+    id_category_pr = Column(Integer, ForeignKey('category.id'))
     problem = Column("problem", String)
 
     def __init__(self, id_category_pr, problem):
@@ -182,14 +195,6 @@ class Problems(Base):
         new_problem = Problems(id_category_pr=id_category_pr, problem=problem)
         session.add(new_problem)
         session.commit()
-
-    @staticmethod
-    def get_all_problems():
-        problems = session.query(Problems).all()
-        return [problem.problem for problem in problems]
-
-
-
 
 
 engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
@@ -205,9 +210,11 @@ session.expire_on_commit = False
 session.commit()
 connections.close()
 
+
 def user_exist(contact_number):
     q = session.query(User.number).filter(User.number == contact_number)
     return session.query(q.exists()).scalar()
+
 
 def user_status(contact_number):
     g = session.query(User.status).filter(User.number == contact_number).first()

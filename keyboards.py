@@ -2,6 +2,7 @@ from aiogram.types import ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram import types
 import db_01
+import main
 
 
 def contact_keyboard() -> ReplyKeyboardMarkup:
@@ -53,13 +54,13 @@ def problem_category() -> ReplyKeyboardMarkup:
 
     for prob in problems:
         kb.button(text=prob)
+    kb.adjust(5, 5)
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
 def problem_type() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
-    problems = db_01.Category.get_all_name()
-
+    problems = main.probl
     for prob in problems:
         kb.button(text=prob)
     return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
