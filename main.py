@@ -40,6 +40,7 @@ available_answers = ["Отправить", "Отменить"]
 
 
 class HelpDesk(StatesGroup):
+    getting_name = State()
     choosing_report_number = State()
     choosing_problem_category = State()
     choosing_problem_type = State()
@@ -51,16 +52,17 @@ class HelpDesk(StatesGroup):
 
 
 @dp.message(CommandStart())
-async def command_start_handler(message: Message) -> None:
+async def command_start_handler(message: Message, state: FSMContext) -> None:
     await message.answer(text="Привет!\n"
                               "Я - бот HelpDesk, сделанный для упрощения работы с заявками.\n"
                               "Вы можете просматривать, редактировать и подавать заявки.\n"
                               "Для начала работы необходимо авторизоваться по номеру телефона \n"
                               " — просто нажмите кнопку 'Отправить'.", reply_markup=kb.contact_keyboard())
+    await state.set_state(HelpDesk.getting_name)
 
 
-@dp.message(F.contact)
-async def get_contact(message: types.Message):
+@dp.message(HelpDesk.getting_name, F.contact)
+async def get_contact(message: types.Message, state: FSMContext):
     contact = message.contact
     global user_contact
     global key_admin
@@ -79,6 +81,7 @@ async def get_contact(message: types.Message):
                                      reply_markup=kb.function_keyboard())
                 user_contact = str(contact.phone_number)
                 key_admin = True
+                await state.update_data(user_name=matched_user.name)
             else:
                 await message.answer("Соответствующий пользователь не найден.")
         else:
@@ -231,7 +234,8 @@ async def screenshot(message: Message, state: FSMContext):
     report_data = await state.get_data()
     await message.answer_photo(
         report_data['user_screenshot'],
-        caption=f"Вы ввели следующие данные: \nКатегория: {report_data['chosen_problem_category']} \n"
+        caption=f"Вы ввели следующие данные:  \nЗаявитель: {report_data['user_name']} \n"
+                f"Категория: {report_data['chosen_problem_category']} \n"
                 f"Услуга: {report_data['chosen_problem']} \n"
                 f"Тема: {report_data['theme']} \n"
                 f"Описание: {report_data['user_description']} \n"
@@ -247,7 +251,8 @@ async def screenshot(message: Message, state: FSMContext):
     report_data = await state.get_data()
     await message.answer_photo(
         report_data['user_screenshot'],
-        caption=f"Вы ввели следующие данные: \nКатегория: {report_data['chosen_problem_category']} \n"
+        caption=f"Вы ввели следующие данные: \nЗаявитель: {report_data['user_name']} \n"
+                f"Категория: {report_data['chosen_problem_category']} \n"
                 f"Услуга: {report_data['chosen_problem']} \n"
                 f"Тема: {report_data['theme']} \n"
                 f"Описание: {report_data['user_description']} \n"
@@ -273,7 +278,7 @@ async def send(message: Message, state: FSMContext):
             "description": "{report_data['theme']}: {report_data['user_description']}",
             "requester": {{
                 "id": "4",
-                "name": "{matched_user.name}",
+                "name": "{report_data['user_name']}",
             }}
         }}
     }}'''
