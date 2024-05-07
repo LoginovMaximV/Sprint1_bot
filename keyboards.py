@@ -16,7 +16,6 @@ def function_keyboard() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     kb.button(text="Подать заявку")
     kb.button(text="Просмотр заявок")
-    kb.button(text="Редактировать заявку")
     kb.adjust()
     return kb.as_markup(resize_keyboard=True)
 
