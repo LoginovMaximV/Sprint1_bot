@@ -5,6 +5,7 @@ import logging
 import sys
 import db_01
 import requests
+import aiohttp
 
 
 from aiogram import Bot, Dispatcher, F, types
@@ -21,7 +22,7 @@ from test import auth
 from aiogram.types import FSInputFile
 
 
-url = 'https://141.101.201.70:8444/api/v3/requests'
+base_url = 'https://141.101.201.70:8444/api/v3'
 headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
 tabl = BD()
 resultSelect = tabl.ss()
@@ -100,6 +101,7 @@ async def view_report(message: types.Message):
 @auth
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
+    url = f"{base_url}/requests"
     input_data = f'''{{
         "list_info": {{
             "row_count": 20,
@@ -251,29 +253,30 @@ async def cancel(message: Message, state: FSMContext):
     await state.clear()
 
 
+async def send_to_helpdesk(subject: str, user_name: str, description: str):
+    url = f"{base_url}/requests"
+    input_data = json.dumps({
+        "request": {
+            "subject": subject,
+            "description": description,
+            "requester": {
+                "name": user_name
+            }
+        }
+    })
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, data={'input_data': input_data}, ssl=False) as response:
+            response_text = await response.text()
+            return json.loads(response_text)
+
 @auth
 @dp.message(HelpDesk.send_or_cancel, F.text == 'Отправить')
 async def send(message: Message, state: FSMContext):
     report_data = await state.get_data()
-    input_data = f'''{{
-        "request": {{
-            "subject": "{report_data['chosen_problem']}",
-            "description": "{report_data['theme']}: {report_data['user_description']}",
-            "requester": {{
-                "id": "4",
-                "name": "{report_data['user_name']}",
-            }}
-        }}
-    }}'''
-    data = {'input_data': str(input_data)}
-    response = requests.post(url, headers=headers, data=data, verify=False)
-    print(response.text)
-    json_data = json.loads(response.text)
-    print(json_data)
-    request_id = json_data["request"]["id"]
-    await message.answer(text="Заявка успешно подана!\n"
-                              f"Номер вашей заявки {request_id}", reply_markup=kb.function_keyboard())
-
+    response_json = await send_to_helpdesk(report_data['chosen_problem'], report_data['user_name'],
+                                           f"{report_data['theme']}: {report_data['user_description']}")
+    request_id = response_json["request"]["id"]
+    await message.answer(f"Заявка успешно подана!\nНомер вашей заявки {request_id}")
     await state.clear()
 
 
