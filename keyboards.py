@@ -1,6 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from aiogram import types
 import db_01
 import main
 
@@ -16,7 +15,6 @@ def function_keyboard() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     kb.button(text="Подать заявку")
     kb.button(text="Просмотр заявок")
-    kb.button(text="Редактировать заявку")
     kb.adjust()
     return kb.as_markup(resize_keyboard=True)
 
