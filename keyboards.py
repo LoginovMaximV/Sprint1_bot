@@ -1,6 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from aiogram import types
 import db_01
 import main
 
