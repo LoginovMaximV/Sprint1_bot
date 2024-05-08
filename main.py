@@ -34,7 +34,6 @@ user_contact = ''
 matched_user = ''
 probl = []
 key_admin = False
-unknown_auth = False #флаг для неизвестных пользователей
 available_problem_categories = db_01.Category.get_all_name()
 available_os_types = ["Windows", "macOS", "Linux"]
 available_answers = ["Отправить", "Отменить"]
@@ -50,7 +49,6 @@ class HelpDesk(StatesGroup):
     send_or_cancel = State()
     uncommon_problem = State()
     sending_screenshot = State()
-    getting_unknown_name = State()
 
 
 @dp.message(CommandStart())
@@ -69,7 +67,6 @@ async def get_contact(message: types.Message, state: FSMContext):
     global user_contact
     global key_admin
     global matched_user
-    global unknown_auth
     user_contact = str(contact.phone_number)
     if user_contact.startswith('7'):
         user_contact = '+' + user_contact
@@ -90,17 +87,14 @@ async def get_contact(message: types.Message, state: FSMContext):
         else:
             await message.answer(f"Статус пользователя не активен. Вам закрыт доступ к заявкам")
     else:
-        await message.answer("Добро пожаловать!", reply_markup=kb.function_keyboard())
-        unknown_auth = True
-        user_contact = str(contact.phone_number)
-        matched_user.name = ''
-        await state.update_data(user_name=matched_user.name)
+        await message.answer(f"Данного номера нет в базе сотрудников.")
 
 
 @auth
-@dp.message(lambda message: unknown_auth == True, F.text == 'Просмотр заявок') #должны быть только заявки этого пользователя
+@dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок', HelpDesk.choosing_report_number)
 async def view_report(message: types.Message):
-    await message.answer("Просмотр заявок для неизвестного юзера")
+    await message.answer(resultSelect)
+    await message.answer('Введите номер редактируемой заявки:')
 
 
 @auth
@@ -148,12 +142,6 @@ async def view_report(message: types.Message):
 
 @auth
 @dp.message(lambda message: key_admin == True, F.text == 'Подать заявку')
-async def new_report(message: types.Message, state: FSMContext):
-    await message.answer("Выберите категорию:", reply_markup=kb.problem_category())
-    await state.set_state(HelpDesk.choosing_problem_category)
-
-@auth
-@dp.message(lambda message: unknown_auth == True, F.text == 'Подать заявку')
 async def new_report(message: types.Message, state: FSMContext):
     await message.answer("Выберите категорию:", reply_markup=kb.problem_category())
     await state.set_state(HelpDesk.choosing_problem_category)
@@ -215,20 +203,6 @@ async def description(message: Message, state: FSMContext):
 @dp.message(HelpDesk.description)
 async def screenshot1(message: Message, state: FSMContext):
     await state.update_data(user_description=message.text)
-    if key_admin:
-        await message.answer(
-            text="Приложите скриншот:",
-            reply_markup=kb.screenshot())
-        await state.set_state(HelpDesk.sending_screenshot)
-    else:
-        await message.answer("Введите ваше имя:") #запрос имени у неизвестного пользователя
-        await state.set_state(HelpDesk.getting_unknown_name)
-
-
-@auth
-@dp.message(HelpDesk.getting_unknown_name)
-async def screenshot1(message: Message, state: FSMContext):
-    await state.update_data(unknown_user=message.text)
     await message.answer(
         text="Приложите скриншот:",
         reply_markup=kb.screenshot())
@@ -241,28 +215,16 @@ async def screenshot(message: Message, state: FSMContext):
     photod = FSInputFile("no_screen.png")
     await state.update_data(user_screenshot=photod)
     report_data = await state.get_data()
-    if key_admin:
-        await message.answer_photo(
-            report_data['user_screenshot'],
-            caption=f"Вы ввели следующие данные:  \nЗаявитель: {report_data['user_name']} \n"
-                    f"Категория: {report_data['chosen_problem_category']} \n"
-                    f"Услуга: {report_data['chosen_problem']} \n"
-                    f"Тема: {report_data['theme']} \n"
-                    f"Описание: {report_data['user_description']} \n"
-                    f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.",
-            reply_markup=kb.new_report_keyboard())
-        await state.set_state(HelpDesk.send_or_cancel)
-    else:
-        await message.answer_photo(
-            report_data['user_screenshot'],
-            caption=f"Вы ввели следующие данные:  \nЗаявитель: {report_data['unknown_user']} \n"
-                    f"Категория: {report_data['chosen_problem_category']} \n"
-                    f"Услуга: {report_data['chosen_problem']} \n"
-                    f"Тема: {report_data['theme']} \n"
-                    f"Описание: {report_data['user_description']} \n"
-                    f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.",
-            reply_markup=kb.new_report_keyboard())
-        await state.set_state(HelpDesk.send_or_cancel)
+    await message.answer_photo(
+        report_data['user_screenshot'],
+        caption=f"Вы ввели следующие данные:  \nЗаявитель: {report_data['user_name']} \n"
+                f"Категория: {report_data['chosen_problem_category']} \n"
+                f"Услуга: {report_data['chosen_problem']} \n"
+                f"Тема: {report_data['theme']} \n"
+                f"Описание: {report_data['user_description']} \n"
+                f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.",
+        reply_markup=kb.new_report_keyboard())
+    await state.set_state(HelpDesk.send_or_cancel)
 
 
 @auth
@@ -270,28 +232,16 @@ async def screenshot(message: Message, state: FSMContext):
 async def screenshot(message: Message, state: FSMContext):
     await state.update_data(user_screenshot=message.photo[-1].file_id)
     report_data = await state.get_data()
-    if key_admin:
-        await message.answer_photo(
-            report_data['user_screenshot'],
-            caption=f"Вы ввели следующие данные:  \nЗаявитель: {report_data['user_name']} \n"
-                    f"Категория: {report_data['chosen_problem_category']} \n"
-                    f"Услуга: {report_data['chosen_problem']} \n"
-                    f"Тема: {report_data['theme']} \n"
-                    f"Описание: {report_data['user_description']} \n"
-                    f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.",
-            reply_markup=kb.new_report_keyboard())
-        await state.set_state(HelpDesk.send_or_cancel)
-    else:
-        await message.answer_photo(
-            report_data['user_screenshot'],
-            caption=f"Вы ввели следующие данные:  \nЗаявитель: {report_data['unknown_user']} \n"
-                    f"Категория: {report_data['chosen_problem_category']} \n"
-                    f"Услуга: {report_data['chosen_problem']} \n"
-                    f"Тема: {report_data['theme']} \n"
-                    f"Описание: {report_data['user_description']} \n"
-                    f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.",
-            reply_markup=kb.new_report_keyboard())
-        await state.set_state(HelpDesk.send_or_cancel)
+    await message.answer_photo(
+        report_data['user_screenshot'],
+        caption=f"Вы ввели следующие данные: \nЗаявитель: {report_data['user_name']} \n"
+                f"Категория: {report_data['chosen_problem_category']} \n"
+                f"Услуга: {report_data['chosen_problem']} \n"
+                f"Тема: {report_data['theme']} \n"
+                f"Описание: {report_data['user_description']} \n"
+                f"Если все верно, то нажмите кнопку 'Отправить'. Иначе - кнопку 'Отменить'.",
+        reply_markup=kb.new_report_keyboard())
+    await state.set_state(HelpDesk.send_or_cancel)
 
 
 @auth
@@ -315,7 +265,7 @@ async def send(message: Message, state: FSMContext):
             }}
         }}
     }}'''
-    data = {'input_data': input_data}
+    data = {'input_data': str(input_data)}
     response = requests.post(url, headers=headers, data=data, verify=False)
     print(response.text)
     json_data = json.loads(response.text)
