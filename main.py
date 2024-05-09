@@ -253,7 +253,7 @@ async def cancel(message: Message, state: FSMContext):
     await state.clear()
 
 
-async def send_to_helpdesk(subject: str, user_name: str, description: str, email: str, phone_number: str, category_id: str, service_cat: str, service_cat_id: str, vip: str):
+async def send_to_helpdesk(subject: str, user_name: str, description: str, email: str, phone_number: str,  vip: str):
     url = f"{base_url}/requests"
     input_data = json.dumps({
         "request": {
@@ -264,23 +264,13 @@ async def send_to_helpdesk(subject: str, user_name: str, description: str, email
                 "phone": phone_number,
                 "name": user_name,
                 "is_vipuser": vip,
-            },
-            "template": {
-                "is_service_template": "true",
-                "service_category": {
-                    "id": category_id
-                },
-                "name": service_cat,
-                "id": service_cat_id,
-            },
-            "due_by_time": {
-                "display_value": "-"
             }
         }
     })
     async with aiohttp.ClientSession() as session:
         async with session.post(url, headers=headers, data={'input_data': input_data}, ssl=False) as response:
             response_text = await response.text()
+            print(response_text)
             return json.loads(response_text)
 
 @auth
@@ -290,14 +280,12 @@ async def send(message: Message, state: FSMContext):
     matched_user.email = str(matched_user.email)
     matched_user.number = str(matched_user.number)
     matched_user.vip = matched_user.vip
-    category_id = str(Category.get_id_by_name(report_data['chosen_problem_category']))
-    problem_id = str(Problem.get_id_by_name(report_data['chosen_problem']))
+    # category_id = str(Category.get_id_by_name(report_data['chosen_problem_category']))
+    # problem_id = str(Problem.get_id_by_name(report_data['chosen_problem']))
     response_json = await send_to_helpdesk(report_data['chosen_problem'], report_data['user_name'],
                                            f"{report_data['theme']}: {report_data['user_description']}",
-                                           matched_user.email, matched_user.number, category_id, report_data['chosen_problem'],
-                                           problem_id, matched_user.vip)
+                                           matched_user.email, matched_user.number, matched_user.vip)
     request_id = response_json["request"]["id"]
-    print(response_json.text)
     await message.answer(f"Заявка успешно подана!\nНомер вашей заявки {request_id}")
     await state.clear()
 
