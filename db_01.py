@@ -49,13 +49,13 @@ session.expire_on_commit = False
 session.commit()
 connections.close()
 
+
 class Problem(Base):
     __tablename__ = "service_category"
 
     id = Column("id", Integer, primary_key=True)
     id_category = Column(Integer, ForeignKey('category.id'))
     name = Column("name", String)
-
 
     def __init__(self, id, id_category, name):
         self.id = id
@@ -64,7 +64,6 @@ class Problem(Base):
 
     def __repr__(self):
         return f"({self.id}, {self.id_category}, {self.name}"
-
 
     @staticmethod
     def get_all_problems():
@@ -78,6 +77,14 @@ class Problem(Base):
         for category in categories:
             names.append(category.name)
         return names
+
+    @staticmethod
+    def get_id_by_name(problem_name):
+        problem = session.query(Problem).filter(Problem.name == problem_name).first()
+        if problem is not None:
+            return problem.id
+        else:
+            return None
 
 
 engins = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
