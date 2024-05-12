@@ -9,10 +9,10 @@ user_contact = ''
 def auth(func):
     def wrapper(*args, **kwargs):
         if db_01.user_exist(user_contact):
-            return func(*args, **kwargs)
-        else:
-            return 'Доступ заблокирован'
-
+            if db_01.user_status(user_contact):
+                return func(*args, **kwargs)
+            else:
+                return 'Доступ заблокирован'
     return wrapper
 
 
