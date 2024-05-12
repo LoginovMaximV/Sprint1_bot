@@ -97,7 +97,42 @@ async def get_contact(message: types.Message, state: FSMContext):
 @auth
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
-    await message.answer('просмотр заявки для админа:')
+    url = f"{base_url}/requests"
+    input_data = f'''{{
+            "list_info": {{
+                "row_count": 20,
+                "start_index": 1,
+                "sort_field": "subject",
+                "sort_order": "asc",
+                "get_total_count": true,
+            }}
+        }}'''
+    params = {'input_data': input_data}
+    response = requests.get(url, headers=headers, params=params, verify=False)
+    print(response.text)
+    if response.status_code == 200:
+        data = response.json()
+        requests_list = data.get('requests', [])
+
+        if requests_list:
+            for request in requests_list:
+                # request_id = request['request']['id']
+                subject = request['subject']
+                description = request['short_description']
+                status = request['status']['name']
+                group = request['group']['name']
+                finish_time = request['due_by_time']['display_value']
+                await message.answer(
+                    f" {subject}\n"
+                    f"Описание: {description}\n"
+                    f"Статус: {status}\n"
+                    f"Группа: {group}\n"
+                    f"Срок выполнения: {finish_time}"
+                )
+        else:
+            await message.answer(f"Не найдено заявок для пользователя {matched_user.name}")
+    else:
+        await message.answer("Ошибка при получении данных. Попробуйте позже.")
 
 
 @auth
@@ -112,7 +147,7 @@ async def view_report(message: types.Message):
             "sort_order": "asc",
             "get_total_count": true,
             "search_fields": {{
-                "requester.name": "Баканов Артур Андреевич",
+                "requester.name": "{matched_user.name}",
             }},
         }}
     }}'''
@@ -288,6 +323,22 @@ async def send(message: Message, state: FSMContext):
                                            f"{report_data['theme']}: {report_data['user_description']}",
                                            matched_user.email, matched_user.number, matched_user.vip)
     request_id = response_json["request"]["id"]
+
+    fileg = report_data['user_screenshot']
+    file_info = await bot.get_file(fileg)
+    file_path = file_info.file_path
+    file_url = f"https://api.telegram.org/file/bot{TOKEN}/{file_path}"
+    print(file_url)
+
+    def add_attach_file(url: str, endpoint: str, request_id: int, file_url: str) -> int:
+        url1 = f"{url}/{endpoint}/{request_id}/upload"
+        response = requests.get(file_url, stream=True)
+        files = {'file': (file_url.split("/")[-1], response.raw, 'image/jpeg')}
+        responsed = requests.put(url1, headers=headers, files=files, verify=False)
+        return responsed.status_code
+
+    s = add_attach_file(base_url, "requests", request_id, file_url)
+    print(s)
     await message.answer(f"Заявка успешно подана!\nНомер вашей заявки {request_id}")
     await state.clear()
 
