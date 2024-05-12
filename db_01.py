@@ -35,6 +35,11 @@ class User(Base):
         session.add(new_user)
         session.commit()
 
+    @staticmethod
+    def get_admin_status(phone):
+        admin_st = session.query(User).filter(User.number == phone).first()
+        return admin_st.admin
+
 
 engin = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
 

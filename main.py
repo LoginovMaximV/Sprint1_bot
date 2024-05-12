@@ -34,6 +34,7 @@ admin_phone_number = os.getenv("ADMIN_NUMBER")
 user_contact = ''
 matched_user = ''
 probl = []
+key_av = False
 key_admin = False
 available_problem_categories = db_01.Category.get_all_name()
 available_os_types = ["Windows", "macOS", "Linux"]
@@ -66,6 +67,7 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
 async def get_contact(message: types.Message, state: FSMContext):
     contact = message.contact
     global user_contact
+    global key_av
     global key_admin
     global matched_user
     user_contact = str(contact.phone_number)
@@ -81,7 +83,8 @@ async def get_contact(message: types.Message, state: FSMContext):
                                      "Добро пожаловать " + matched_user.name + '!',
                                      reply_markup=kb.function_keyboard())
                 user_contact = str(contact.phone_number)
-                key_admin = True
+                key_av = True
+                key_admin = db_01.User.get_admin_status(user_contact)
                 await state.update_data(user_name=matched_user.name)
             else:
                 await message.answer("Соответствующий пользователь не найден.")
@@ -92,14 +95,13 @@ async def get_contact(message: types.Message, state: FSMContext):
 
 
 @auth
-@dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок', HelpDesk.choosing_report_number)
+@dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
-    await message.answer(resultSelect)
-    await message.answer('Введите номер редактируемой заявки:')
+    await message.answer('просмотр заявки для админа:')
 
 
 @auth
-@dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
+@dp.message(lambda message: key_av == True, F.text == 'Просмотр заявок')
 async def view_report(message: types.Message):
     url = f"{base_url}/requests"
     input_data = f'''{{
@@ -143,7 +145,7 @@ async def view_report(message: types.Message):
 
 
 @auth
-@dp.message(lambda message: key_admin == True, F.text == 'Подать заявку')
+@dp.message(lambda message: key_av == True, F.text == 'Подать заявку')
 async def new_report(message: types.Message, state: FSMContext):
     await message.answer("Выберите категорию:", reply_markup=kb.problem_category())
     await state.set_state(HelpDesk.choosing_problem_category)
