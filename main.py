@@ -100,7 +100,7 @@ async def view_report(message: types.Message):
     url = f"{base_url}/requests"
     input_data = f'''{{
             "list_info": {{
-                "row_count": 20,
+                "row_count": 100,
                 "start_index": 1,
                 "sort_field": "subject",
                 "sort_order": "asc",
@@ -116,21 +116,23 @@ async def view_report(message: types.Message):
 
         if requests_list:
             for request in requests_list:
-                # request_id = request['request']['id']
+                request_id = request['id']
                 subject = request['subject']
                 description = request['short_description']
+                name = request['requester']['name']
                 status = request['status']['name']
                 group = request['group']['name']
                 finish_time = request['due_by_time']['display_value']
                 await message.answer(
-                    f" {subject}\n"
+                    f"ID:{request_id} {subject}\n"
+                    f"Имя: {name}\n"
                     f"Описание: {description}\n"
                     f"Статус: {status}\n"
                     f"Группа: {group}\n"
                     f"Срок выполнения: {finish_time}"
                 )
         else:
-            await message.answer(f"Не найдено заявок для пользователя {matched_user.name}")
+            await message.answer(f"Не найдено заявок ")
     else:
         await message.answer("Ошибка при получении данных. Попробуйте позже.")
 
@@ -160,14 +162,15 @@ async def view_report(message: types.Message):
 
         if requests_list:
             for request in requests_list:
-                #request_id = request['request']['id']
+                request_id = request['id']
                 subject = request['subject']
                 description = request['short_description']
                 status = request['status']['name']
                 group = request['group']['name']
                 finish_time = request['due_by_time']['display_value']
                 await message.answer(
-                                     f" {subject}\n"
+                                     f"ID:{request_id} {subject}\n"
+                                     f"Имя: {matched_user.name}\n"
                                      f"Описание: {description}\n"
                                      f"Статус: {status}\n"
                                      f"Группа: {group}\n"
@@ -273,7 +276,7 @@ async def screenshot(message: Message, state: FSMContext):
     report_data = await state.get_data()
     await message.answer_photo(
         report_data['user_screenshot'],
-        caption=f"Вы ввели следующие данные: \nЗаявитель: {report_data['user_name']} \n"
+        caption=f"Вы ввели следующие данные: \n"
                 f"Категория: {report_data['chosen_problem_category']} \n"
                 f"Услуга: {report_data['chosen_problem']} \n"
                 f"Тема: {report_data['theme']} \n"
@@ -319,7 +322,7 @@ async def send(message: Message, state: FSMContext):
     matched_user.vip = matched_user.vip
     # category_id = str(Category.get_id_by_name(report_data['chosen_problem_category']))
     # problem_id = str(Problem.get_id_by_name(report_data['chosen_problem']))
-    response_json = await send_to_helpdesk(report_data['chosen_problem'], report_data['user_name'],
+    response_json = await send_to_helpdesk(report_data['chosen_problem'], matched_user.name,
                                            f"{report_data['theme']}: {report_data['user_description']}",
                                            matched_user.email, matched_user.number, matched_user.vip)
     request_id = response_json["request"]["id"]
