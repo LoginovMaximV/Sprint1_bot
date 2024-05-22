@@ -51,7 +51,7 @@ class HelpDesk(StatesGroup):
     send_or_cancel = State()
     uncommon_problem = State()
     sending_screenshot = State()
-
+    admin_search = State()
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
@@ -93,10 +93,18 @@ async def get_contact(message: types.Message, state: FSMContext):
     else:
         await message.answer(f"Данного номера нет в базе сотрудников.")
 
-
 @auth
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
+async def search_request(message: types.Message,state: FSMContext):
+    await message.answer("Введите номер заявки:")
+
+    await state.set_state(HelpDesk.admin_search)
+
+@auth
+@dp.message(lambda message: key_admin == True, HelpDesk.admin_search)
 async def view_report(message: types.Message):
+    request_number = message.text
+
     url = f"{base_url}/requests"
     input_data = f'''{{
             "list_info": {{
@@ -116,21 +124,25 @@ async def view_report(message: types.Message):
 
         if requests_list:
             for request in requests_list:
-                request_id = request['id']
-                subject = request['subject']
-                description = request['short_description']
-                name = request['requester']['name']
-                status = request['status']['name']
-                group = request['group']['name']
-                finish_time = request['due_by_time']['display_value']
-                await message.answer(
-                    f"ID:{request_id} {subject}\n"
-                    f"Имя: {name}\n"
-                    f"Описание: {description}\n"
-                    f"Статус: {status}\n"
-                    f"Группа: {group}\n"
-                    f"Срок выполнения: {finish_time}"
-                )
+                if request_number == request['id']:
+                    request_id = request['id']
+                    subject = request['subject']
+                    description = request['short_description']
+                    name = request['requester']['name']
+                    status = request['status']['name']
+                    group = request['group']['name']
+                    finish_time = request['due_by_time']['display_value']
+                    await message.answer(
+                        f"ID:{request_id} {subject}\n"
+                        f"Имя: {name}\n"
+                        f"Описание: {description}\n"
+                        f"Статус: {status}\n"
+                        f"Группа: {group}\n"
+                        f"Срок выполнения: {finish_time}"
+                    )
+
+
+
         else:
             await message.answer(f"Не найдено заявок ")
     else:
@@ -164,7 +176,7 @@ async def view_report(message: types.Message):
             for request in requests_list:
                 request_id = request['id']
                 subject = request['subject']
-                description = request['short_description']
+                description = request['short_description'][:150]
                 status = request['status']['name']
                 group = request['group']['name']
                 finish_time = request['due_by_time']['display_value']
