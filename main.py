@@ -53,6 +53,7 @@ class HelpDesk(StatesGroup):
     sending_screenshot = State()
     admin_search = State()
 
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
     await message.answer(text="Привет!\n"
@@ -104,7 +105,6 @@ async def search_request(message: types.Message,state: FSMContext):
 @dp.message(lambda message: key_admin == True, HelpDesk.admin_search)
 async def view_report(message: types.Message):
     request_number = message.text
-
     url = f"{base_url}/requests"
     input_data = f'''{{
             "list_info": {{
@@ -117,7 +117,6 @@ async def view_report(message: types.Message):
         }}'''
     params = {'input_data': input_data}
     response = requests.get(url, headers=headers, params=params, verify=False)
-    print(response.text)
     if response.status_code == 200:
         data = response.json()
         requests_list = data.get('requests', [])
@@ -151,6 +150,30 @@ async def view_report(message: types.Message):
 
 @auth
 @dp.message(lambda message: key_av == True, F.text == 'Просмотр заявок')
+async def view_report(message: types.Message):
+    await message.answer("Выберите опцию:", reply_markup=kb.view_select_keyboard())
+
+
+@auth
+@dp.message(lambda message: key_av == True, F.text == 'Поиск по номеру')
+async def view_report(message: types.Message, state: FSMContext):
+    await message.answer("Введите номер заявки:")
+    await state.set_state(HelpDesk.number_of_report)
+
+
+@auth
+@dp.message(lambda message: key_av == True, HelpDesk.number_of_report)
+async def view_report(message: types.Message, state: FSMContext):
+    await state.update_data(report_number=message.text)
+    report_data = await state.get_data()
+    await message.answer(f"Номер заявки: {report_data['report_number']}, здесь реализуете отфильтрованный"
+                         f" просмотр для юзера",
+                         reply_markup=kb.function_keyboard())
+    await state.clear()
+
+
+@auth
+@dp.message(lambda message: key_av == True, F.text == 'Просмотр  всех заявок')
 async def view_report(message: types.Message):
     url = f"{base_url}/requests"
     input_data = f'''{{
@@ -354,7 +377,8 @@ async def send(message: Message, state: FSMContext):
 
     s = add_attach_file(base_url, "requests", request_id, file_url)
     print(s)
-    await message.answer(f"Заявка успешно подана!\nНомер вашей заявки {request_id}")
+    await message.answer(f"Заявка успешно подана!\nНомер вашей заявки {request_id}",
+                         reply_markup=kb.function_keyboard())
     await state.clear()
 
 
