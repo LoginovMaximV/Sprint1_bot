@@ -19,6 +19,14 @@ def function_keyboard() -> ReplyKeyboardMarkup:
     return kb.as_markup(resize_keyboard=True)
 
 
+def view_select_keyboard() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    kb.button(text="Поиск по номеру")
+    kb.button(text="Просмотр всех заявок")
+    kb.adjust()
+    return kb.as_markup(resize_keyboard=True)
+
+
 def edit_keyboard() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     kb.button(text="Заявка")
