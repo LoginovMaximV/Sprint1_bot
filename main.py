@@ -23,7 +23,7 @@ from aiogram.types import FSInputFile
 
 
 base_url = 'https://141.101.201.70:8444/api/v3'
-headers = {"authtoken": "4BE102E2-449D-4D37-8BC7-167BEF0ACCC7"}
+headers = {"authtoken": "E84D46D9-112E-4B39-BC6D-464AB2711C29"}
 tabl = BD()
 resultSelect = tabl.ss()
 load_dotenv()
