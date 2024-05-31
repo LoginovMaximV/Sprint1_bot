@@ -14,7 +14,6 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 import keyboards as kb
 from dotenv import load_dotenv
-#from connection import BD
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from db_01 import User, session, Category, Problem
@@ -24,8 +23,6 @@ from aiogram.types import FSInputFile
 
 base_url = 'https://141.101.201.70:8444/api/v3'
 headers = {"authtoken": "E84D46D9-112E-4B39-BC6D-464AB2711C29"}
-#tabl = BD()
-#resultSelect = tabl.ss()
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
 bot = Bot(TOKEN)
@@ -53,13 +50,14 @@ class HelpDesk(StatesGroup):
     sending_screenshot = State()
     admin_search = State()
 
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
     await message.answer(text="Привет!\n"
                               "Я - бот HelpDesk, сделанный для упрощения работы с заявками.\n"
-                              "Вы можете просматривать, редактировать и подавать заявки.\n"
-                              "Для начала работы необходимо авторизоваться по номеру телефона \n"
-                              " — просто нажмите кнопку 'Отправить'.", reply_markup=kb.contact_keyboard())
+                              "Вы можете просматривать и подавать заявки.\n"
+                              "Для начала работы необходимо авторизоваться по номеру телефона. \n"
+                              "Просто нажмите кнопку 'Отправить'.", reply_markup=kb.contact_keyboard())
     await state.set_state(HelpDesk.getting_name)
 
 
@@ -79,7 +77,8 @@ async def get_contact(message: types.Message, state: FSMContext):
             matched_user = session.query(User).filter(User.number == str(user_contact)).first()
             matched_user.name = str(matched_user.name)
             if matched_user:
-                await message.answer("Статус пользователя активен. Вам открыт доступ к заявкам. "
+                await message.answer("Статус пользователя активен. \n"
+                                     "Вам открыт доступ к заявкам. \n"
                                      "Добро пожаловать " + matched_user.name + '!',
                                      reply_markup=kb.function_keyboard())
                 user_contact = str(contact.phone_number)
@@ -93,12 +92,14 @@ async def get_contact(message: types.Message, state: FSMContext):
     else:
         await message.answer(f"Данного номера нет в базе сотрудников.")
 
+
 @auth
 @dp.message(lambda message: key_admin == True, F.text == 'Просмотр заявок')
 async def search_request(message: types.Message,state: FSMContext):
     await message.answer("Введите номер заявки:")
 
     await state.set_state(HelpDesk.admin_search)
+
 
 @auth
 @dp.message(lambda message: key_admin == True, HelpDesk.admin_search)
@@ -161,10 +162,11 @@ async def view_report(message: types.Message):
             "sort_order": "asc",
             "get_total_count": true,
             "search_fields": {{
-                "requester.name": "{matched_user.name}",
+                "requester.name": "test.test",
             }},
         }}
     }}'''
+    # в "requester.name": "{matched_user.name}"
     params = {'input_data': input_data}
     response = requests.get(url, headers=headers, params=params, verify=False)
     print(response.text)
@@ -317,22 +319,15 @@ async def send_to_helpdesk(subject: str, user_name: str, description: str, email
                 "name": user_name,
                 "is_vipuser": vip,
             },
-            "template":{
+            "template": {
                 "is_service_template": True,
                 "service_category": {
                     "id": category_id
                     },
                 "name": name_problem,
                 "id": problem_id
-
-
                 },
-
-
-
             }
-
-
     })
 
     async with aiohttp.ClientSession() as session:
@@ -340,6 +335,7 @@ async def send_to_helpdesk(subject: str, user_name: str, description: str, email
             response_text = await response.text()
             print(response_text)
             return json.loads(response_text)
+
 
 @auth
 @dp.message(HelpDesk.send_or_cancel, F.text == 'Отправить')
@@ -350,10 +346,9 @@ async def send(message: Message, state: FSMContext):
     matched_user.vip = matched_user.vip
     category_id = str(Category.get_id_by_name(report_data['chosen_problem_category']))
     problem_id = str(Problem.get_id_by_name(report_data['chosen_problem']))
-    name_problem = str(Problem.get_name_by_id(problem_id))
     response_json = await send_to_helpdesk(report_data['chosen_problem'], matched_user.name,
                                            f"{report_data['theme']}: {report_data['user_description']}",
-                                           matched_user.email, matched_user.number, matched_user.vip, category_id, problem_id,name_problem
+                                           matched_user.email, matched_user.number, matched_user.vip, category_id, problem_id, report_data['chosen_problem']
                                            )
     print(response_json)
     request_id = response_json["request"]["id"]
