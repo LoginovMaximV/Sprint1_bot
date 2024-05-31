@@ -91,6 +91,13 @@ class Problem(Base):
         else:
             return None
 
+    @staticmethod
+    def get_name_by_id(prob_id):
+        problem = session.query(Problem).filter(Problem.id == prob_id).first()
+        if problem is not None:
+            return problem.name
+        else:
+            return None
 
 engins = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')
 

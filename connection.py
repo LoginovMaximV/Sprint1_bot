@@ -10,12 +10,12 @@ for a in users:
     print(a)
 
 
-class BD:
-    def ss(self):
-        cursor.execute("""SELECT * FROM application""")
-        rows = cursor.fetchall()
-        texta = "\n\n".join([', '.join(map(str, row)) for row in rows])
-        return(texta)
+#class BD:
+    #def ss(self):
+        #cursor.execute("""SELECT * FROM application""")
+        #rows = cursor.fetchall()
+        #texta = "\n\n".join([', '.join(map(str, row)) for row in rows])
+        #return(texta)
 
 conn.close
 #engine = create_engine('postgresql://st3:/XjHt(~_+iiRLKPgZvFA;q%5$WhCfW@37.18.110.244:5432/helpDesk')

@@ -14,7 +14,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 import keyboards as kb
 from dotenv import load_dotenv
-from connection import BD
+#from connection import BD
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from db_01 import User, session, Category, Problem
@@ -24,8 +24,8 @@ from aiogram.types import FSInputFile
 
 base_url = 'https://141.101.201.70:8444/api/v3'
 headers = {"authtoken": "E84D46D9-112E-4B39-BC6D-464AB2711C29"}
-tabl = BD()
-resultSelect = tabl.ss()
+#tabl = BD()
+#resultSelect = tabl.ss()
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
 bot = Bot(TOKEN)
@@ -52,7 +52,6 @@ class HelpDesk(StatesGroup):
     uncommon_problem = State()
     sending_screenshot = State()
     admin_search = State()
-
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message, state: FSMContext) -> None:
@@ -105,6 +104,7 @@ async def search_request(message: types.Message,state: FSMContext):
 @dp.message(lambda message: key_admin == True, HelpDesk.admin_search)
 async def view_report(message: types.Message):
     request_number = message.text
+
     url = f"{base_url}/requests"
     input_data = f'''{{
             "list_info": {{
@@ -117,6 +117,7 @@ async def view_report(message: types.Message):
         }}'''
     params = {'input_data': input_data}
     response = requests.get(url, headers=headers, params=params, verify=False)
+    print(response.text)
     if response.status_code == 200:
         data = response.json()
         requests_list = data.get('requests', [])
@@ -150,30 +151,6 @@ async def view_report(message: types.Message):
 
 @auth
 @dp.message(lambda message: key_av == True, F.text == 'Просмотр заявок')
-async def view_report(message: types.Message):
-    await message.answer("Выберите опцию:", reply_markup=kb.view_select_keyboard())
-
-
-@auth
-@dp.message(lambda message: key_av == True, F.text == 'Поиск по номеру')
-async def view_report(message: types.Message, state: FSMContext):
-    await message.answer("Введите номер заявки:")
-    await state.set_state(HelpDesk.number_of_report)
-
-
-@auth
-@dp.message(lambda message: key_av == True, HelpDesk.number_of_report)
-async def view_report(message: types.Message, state: FSMContext):
-    await state.update_data(report_number=message.text)
-    report_data = await state.get_data()
-    await message.answer(f"Номер заявки: {report_data['report_number']}, здесь реализуете отфильтрованный"
-                         f" просмотр для юзера",
-                         reply_markup=kb.function_keyboard())
-    await state.clear()
-
-
-@auth
-@dp.message(lambda message: key_av == True, F.text == 'Просмотр  всех заявок')
 async def view_report(message: types.Message):
     url = f"{base_url}/requests"
     input_data = f'''{{
@@ -328,7 +305,7 @@ async def cancel(message: Message, state: FSMContext):
     await state.clear()
 
 
-async def send_to_helpdesk(subject: str, user_name: str, description: str, email: str, phone_number: str,  vip: str):
+async def send_to_helpdesk(subject: str, user_name: str, description: str, email: str, phone_number: str,  vip: str, category_id:str,name_problem:str,problem_id:str):
     url = f"{base_url}/requests"
     input_data = json.dumps({
         "request": {
@@ -339,9 +316,25 @@ async def send_to_helpdesk(subject: str, user_name: str, description: str, email
                 "phone": phone_number,
                 "name": user_name,
                 "is_vipuser": vip,
+            },
+            "template":{
+                "is_service_template": True,
+                "service_category": {
+                    "id": category_id
+                    },
+                "name": name_problem,
+                "id": problem_id
+
+
+                },
+
+
+
             }
-        }
+
+
     })
+
     async with aiohttp.ClientSession() as session:
         async with session.post(url, headers=headers, data={'input_data': input_data}, ssl=False) as response:
             response_text = await response.text()
@@ -355,11 +348,14 @@ async def send(message: Message, state: FSMContext):
     matched_user.email = str(matched_user.email)
     matched_user.number = str(matched_user.number)
     matched_user.vip = matched_user.vip
-    # category_id = str(Category.get_id_by_name(report_data['chosen_problem_category']))
-    # problem_id = str(Problem.get_id_by_name(report_data['chosen_problem']))
+    category_id = str(Category.get_id_by_name(report_data['chosen_problem_category']))
+    problem_id = str(Problem.get_id_by_name(report_data['chosen_problem']))
+    name_problem = str(Problem.get_name_by_id(problem_id))
     response_json = await send_to_helpdesk(report_data['chosen_problem'], matched_user.name,
                                            f"{report_data['theme']}: {report_data['user_description']}",
-                                           matched_user.email, matched_user.number, matched_user.vip)
+                                           matched_user.email, matched_user.number, matched_user.vip, category_id, problem_id,name_problem
+                                           )
+    print(response_json)
     request_id = response_json["request"]["id"]
 
     fileg = report_data['user_screenshot']
@@ -377,8 +373,7 @@ async def send(message: Message, state: FSMContext):
 
     s = add_attach_file(base_url, "requests", request_id, file_url)
     print(s)
-    await message.answer(f"Заявка успешно подана!\nНомер вашей заявки {request_id}",
-                         reply_markup=kb.function_keyboard())
+    await message.answer(f"Заявка успешно подана!\nНомер вашей заявки {request_id}")
     await state.clear()
 
 
